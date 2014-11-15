@@ -13,6 +13,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import bankaccount.ReplicaEvent.Type;
+
 public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 	
 	protected JTextField textField;
@@ -24,10 +26,10 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		createAndShowGUI();
 	}
 	
-	public CLI2(){	
+	public CLI2(int id){	
 		super(new GridBagLayout());
 		
-		replica = new Replica(this);
+		replica = new Replica(this, id);
 		
 		textField = new JTextField(20);
 		textField.addActionListener(this);
@@ -36,7 +38,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		textArea.setEditable(false);
 		JScrollPane scrollPane = new JScrollPane(textArea);
 		
-		label = new JLabel("Status: ");
+		label = new JLabel("#"+id+" Status: ");
 		
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridwidth = GridBagConstraints.REMAINDER;
@@ -58,10 +60,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 	private void cmdFormat(String s) {
 		String[] substrings = s.split("\\(");
 		cmd = substrings[0];
-		if(cmd == "balance"){
-			return;
-		}
-		else if (cmd == "withdraw" || cmd == "deposit"){
+		if (cmd.equals("withdraw") || cmd.equals("deposit")){
 			substrings = substrings[1].split("\\)");
 			cmdValue = Double.parseDouble(substrings[0]);
 		}
@@ -79,7 +78,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
  
         //Add contents to the window.
         for (int i=0; i<1; i++){
-        	container.add(new CLI2());	
+        	container.add(new CLI2(i));	
         }
         
         frame.add(container);
@@ -115,11 +114,16 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 
 	@Override
 	public void replicaActionPerformed(ReplicaEvent e) {
-		setStatus(e.getStatus().toString());
+		if (e.getType() == Type.BALANCE){
+			setStatus("");
+			textArea.append(e.getValue() + "\n");
+		} else {
+			setStatus(e.getStatus().toString());
+		}
 	}
 	
 	private void setStatus(String s){
-		label.setText("Status: "+s);
+		label.setText("#"+replica.getId()+"Status: "+s);
 	}
 
 }

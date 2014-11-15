@@ -4,25 +4,39 @@ import bankaccount.ReplicaEvent.Status;
 import bankaccount.ReplicaEvent.Type;
 
 public class Replica {
-	Account account;
-	Log log;
-	ReplicaListener listener;
-	boolean isAlive;
+	private Account account;
+	private Log log;
+	private ReplicaListener listener;
+	private boolean isAlive;
+	private int id;
 	
-	public Replica(ReplicaListener listener){
+	public Replica(ReplicaListener listener, int id){
 		this.listener = listener;
+		this.id = id;
+		account = new Account();
+		log = new Log();
 		isAlive = true;
+	}
+	
+	public int getId(){
+		return id;
 	}
 	
 	public boolean isAlive(){
 		return isAlive;
 	}
 	
+	public Log getLog(){
+		return log;
+	}
+	
 	public void deposit(double value){
+		account.deposit(value);
 		fireActionPerformed(Type.DEPOSIT, Status.SUCCESS);
 	}
 	
 	public void withdraw(double value){
+		account.withdraw(value);
 		fireActionPerformed(Type.WITHDRAW, Status.FAIL);
 	}
 	
@@ -41,6 +55,6 @@ public class Replica {
 	}
 	
 	private void fireActionPerformed(Type type, Status status){
-		if (listener != null) listener.replicaActionPerformed(new ReplicaEvent(type, status));
+		if (listener != null) listener.replicaActionPerformed(new ReplicaEvent(type, status, account.getBalance()));
 	}
 }

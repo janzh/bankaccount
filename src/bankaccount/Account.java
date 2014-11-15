@@ -2,10 +2,6 @@ package bankaccount;
 
 public class Account {
 	double balance;
-	
-	public Account() {
-		balance = 0;
-	}
 
 	public double getBalance() {
 		return balance;
