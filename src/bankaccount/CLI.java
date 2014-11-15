@@ -3,7 +3,6 @@ package bankaccount;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.io.BufferedReader;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -11,7 +10,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
-public class CLI extends JFrame{
+public class CLI extends JFrame implements ReplicaListener {
 	private Replica replica;
 	
 	private JPanel container;
@@ -75,13 +74,19 @@ public class CLI extends JFrame{
 				if (key == KeyEvent.VK_ENTER) {
 					cmdFormat(cmdInput.getText());
 					if(cmd == "balance") {
-						replica.balance(cmdValue);
+						replica.balance();
 					}
-					else if(cmd == "deposit") {
+					else if (cmd.equals("deposit")) {
 						replica.deposit(cmdValue);
 					}
-					else if(cmd == "withdraw"){
-						
+					else if (cmd.equals("withdraw")){
+						replica.withdraw(cmdValue);
+					}
+					else if (cmd.equals("fail")) {
+						replica.fail();
+					}
+					else if (cmd.equals("unfail")) {
+						replica.unfail();
 					}
 				}
 			}
@@ -92,5 +97,9 @@ public class CLI extends JFrame{
 			
 		}
 	}
-}
 
+	@Override
+	public void replicaActionPerformed(ReplicaEvent e) {
+		setOutput(e.getStatus().toString());
+	}
+}

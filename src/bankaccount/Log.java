@@ -9,7 +9,7 @@ public class Log {
 		log = new ArrayList<String>();
 	}
 	
-	public String GetElement(int i){
+	public String getElement(int i){
 		return log.get(i);
 	}
 	public void putElement(String s){
