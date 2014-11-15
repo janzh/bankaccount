@@ -9,10 +9,20 @@ public class Replica {
 	private ReplicaListener listener;
 	private boolean isAlive;
 	private int id;
+	// Latest ballot pi took part in
+	private Pair ballotNum;
+	// Latest ballot pi accepted a value
+	private Pair acceptNum;
+	// Latest accepted value
+	private double acceptVal;
 	
 	public Replica(ReplicaListener listener, int id){
-		this.listener = listener;
 		this.id = id;
+		this.ballotNum = new Pair();
+		this.acceptNum = new Pair();
+		
+		this.listener = listener;
+
 		account = new Account();
 		log = new Log();
 		isAlive = true;
