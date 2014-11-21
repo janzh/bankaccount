@@ -13,10 +13,10 @@ public class Communication {
 	public static void sendMessage(Replica receiver, String message){
 		Socket socket = null;
 		try {
-			//InetAddress inetAddress = InetAddress.getByName(receiver.getLocationData().getHost());
-			//int port = receiver.getLocationData().getPort();
-			InetAddress inetAddress = InetAddress.getByName("localhost");
-			int port = 8001;
+			InetAddress inetAddress = InetAddress.getByName(receiver.getLocationData().getHost());
+			int port = receiver.getLocationData().getPort();
+			//InetAddress inetAddress = InetAddress.getByName("localhost");
+			//int port = 8001;
 
 			socket = new Socket(inetAddress, port);
 
@@ -34,8 +34,8 @@ public class Communication {
 	}
 
 	public void receiveMessage(Replica receiver){
-		//int port = receiver.getLocationData().getPort();
-		int port = 8001;
+		int port = receiver.getLocationData().getPort();
+		//int port = 8001;
 		Socket socket = null;
 		try {
 			ServerSocket serverSocket = new ServerSocket(port);

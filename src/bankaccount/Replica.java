@@ -23,12 +23,10 @@ public class Replica {
 	private String message;
 	private ServerListener serverListener;
 	
-	public Replica(ReplicaListener listener, String host, int port, int id){
+	public Replica(String host, int port, int id){
 		this.id = id;
 		this.ballotNum = new Pair();
 		this.acceptNum = new Pair();
-		
-		this.listener = listener;
 
 		account = new Account();
 		log = new Log();
@@ -40,12 +38,20 @@ public class Replica {
 		serverListener.start();
 	}
 	
+	public void setListener(ReplicaListener listener){
+		this.listener = listener;	
+	}
+	
 	public NodeLocationData getLocationData(){
 		return locationData;
 	}
 	
 	public void setReplicaList(ArrayList<Replica> replicas){
 		this.replicas = replicas;
+	}
+	
+	public ArrayList<Replica> getReplicaList(){
+		return replicas;
 	}
 	
 	public int getId(){

@@ -22,18 +22,10 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
     protected JTextArea textArea;
     protected JLabel label;
     protected Replica replica;
-    
-    private static int port;
 	
-	public static void main(String[] args) {
-		port = Integer.parseInt(args[0]);
-		createAndShowGUI();
-	}
-	
-	public CLI2(int id){	
+	public CLI2(Replica replica){	
 		super(new GridBagLayout());
-		
-		replica = new Replica(this, "localhost", port, id);
+		this.replica = replica;
 		
 		textField = new JTextField(20);
 		textField.addActionListener(this);
@@ -42,7 +34,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		textArea.setEditable(false);
 		JScrollPane scrollPane = new JScrollPane(textArea);
 		
-		label = new JLabel("#"+id+" Status: ");
+		label = new JLabel("#"+replica.getId()+" Status: ");
 		
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridwidth = GridBagConstraints.REMAINDER;
@@ -56,6 +48,23 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		c.weighty = 1.0;
 		
 		add(scrollPane, c);
+		
+		//Create and set up the window.
+        JFrame frame = new JFrame("CLI");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        JPanel container = new JPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
+ 
+        //Add contents to the window.
+        container.add(this);	
+        
+        frame.add(container);
+ 
+        //Display the window.
+        frame.pack();
+        frame.setTitle("Port: "+replica.getLocationData().getPort());
+        frame.setVisible(true);
 	}
 	
 	String cmd;
@@ -70,28 +79,6 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		}
 		else {return;}
 	}
-	
-	
-	private static void createAndShowGUI() {
-        //Create and set up the window.
-        JFrame frame = new JFrame("CLI");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
-        JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
- 
-        //Add contents to the window.
-        for (int i=0; i<1; i++){
-        	container.add(new CLI2(i));	
-        }
-        
-        frame.add(container);
- 
-        //Display the window.
-        frame.pack();
-        frame.setTitle("Port: "+port);
-        frame.setVisible(true);
-    }
 
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
@@ -114,8 +101,14 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		else if(cmd.equals("withdraw")){
 			replica.withdraw(cmdValue);
 		}
-		else if(cmd.equals("send")){
-			Communication.sendMessage(null, "Test message");
+		else if(cmd.equals("send0")){
+			Communication.sendMessage(replica.getReplicaList().get(0), "Test message to 0");
+		}
+		else if(cmd.equals("send1")){
+			Communication.sendMessage(replica.getReplicaList().get(1), "Test message to 1");
+		}
+		else if(cmd.equals("send2")){
+			Communication.sendMessage(replica.getReplicaList().get(2), "Test message to 2");
 		}
 	}
 
