@@ -1,5 +1,7 @@
 package bankaccount;
 
+import java.util.ArrayList;
+
 import bankaccount.ReplicaEvent.Status;
 import bankaccount.ReplicaEvent.Type;
 
@@ -16,7 +18,12 @@ public class Replica {
 	// Latest accepted value
 	private double acceptVal;
 	
-	public Replica(ReplicaListener listener, int id){
+	private ArrayList<Replica> replicas;
+	private NodeLocationData locationData;
+	private String message;
+	private ServerListener serverListener;
+	
+	public Replica(ReplicaListener listener, String host, int port, int id){
 		this.id = id;
 		this.ballotNum = new Pair();
 		this.acceptNum = new Pair();
@@ -25,7 +32,20 @@ public class Replica {
 
 		account = new Account();
 		log = new Log();
+		replicas = new ArrayList<>();
 		isAlive = true;
+		
+		locationData = new NodeLocationData(host, port, id);
+		serverListener = new ServerListener(this);
+		serverListener.start();
+	}
+	
+	public NodeLocationData getLocationData(){
+		return locationData;
+	}
+	
+	public void setReplicaList(ArrayList<Replica> replicas){
+		this.replicas = replicas;
 	}
 	
 	public int getId(){
@@ -66,5 +86,14 @@ public class Replica {
 	
 	private void fireActionPerformed(Type type, Status status){
 		if (listener != null) listener.replicaActionPerformed(new ReplicaEvent(type, status, account.getBalance()));
+	}
+	
+	private void fireActionPerformed(Type type, String message){
+		if (listener != null) listener.replicaActionPerformed(new ReplicaEvent(type, message));
+	}
+
+	public void setMessage(String receivedMessage) {
+		this.message = receivedMessage;
+		fireActionPerformed(Type.RECEIVE, message);	
 	}
 }

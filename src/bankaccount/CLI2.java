@@ -4,6 +4,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Random;
 
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
@@ -21,15 +22,18 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
     protected JTextArea textArea;
     protected JLabel label;
     protected Replica replica;
+    
+    private static int port;
 	
 	public static void main(String[] args) {
+		port = Integer.parseInt(args[0]);
 		createAndShowGUI();
 	}
 	
 	public CLI2(int id){	
 		super(new GridBagLayout());
 		
-		replica = new Replica(this, id);
+		replica = new Replica(this, "localhost", port, id);
 		
 		textField = new JTextField(20);
 		textField.addActionListener(this);
@@ -85,6 +89,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
  
         //Display the window.
         frame.pack();
+        frame.setTitle("Port: "+port);
         frame.setVisible(true);
     }
 
@@ -109,12 +114,17 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		else if(cmd.equals("withdraw")){
 			replica.withdraw(cmdValue);
 		}
-        
+		else if(cmd.equals("send")){
+			Communication.sendMessage(null, "Test message");
+		}
 	}
 
 	@Override
 	public void replicaActionPerformed(ReplicaEvent e) {
-		if (e.getType() == Type.BALANCE){
+		if (e.getType() == Type.RECEIVE){
+			textArea.append("Received message: "+e.getMessage()+"\n");
+		}
+		else if (e.getType() == Type.BALANCE){
 			setStatus("");
 			textArea.append(e.getValue() + "\n");
 		} else {

@@ -22,7 +22,7 @@ public class CLI extends JFrame implements ReplicaListener {
 
 	public CLI (int id) {
 		super("Application CLI");
-		replica = new Replica(this, id);
+		replica = new Replica(this, "localhost", 8001, id);
 
 		this.cmdInput = new JTextField(10);
 		this.cmdOutput = new JLabel("SUCCESS");

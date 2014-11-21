@@ -1,12 +1,18 @@
 package bankaccount;
 
 public class ReplicaEvent {
-	public enum Type { DEPOSIT, WITHDRAW, BALANCE, FAIL, UNFAIL };
+	public enum Type { RECEIVE, DEPOSIT, WITHDRAW, BALANCE, FAIL, UNFAIL };
 	public enum Status { SUCCESS, FAIL };
 	
 	private Type type;
 	private Status status;
 	private double value;
+	private String message;
+	
+	public ReplicaEvent(Type type, String message){
+		this.type = type;
+		this.message = message;
+	}
 	
 	public ReplicaEvent(Type type, Status status, double value) { 
 		this.type = type;
@@ -24,5 +30,9 @@ public class ReplicaEvent {
 	
 	public double getValue(){
 		return value;
+	}
+	
+	public String getMessage(){
+		return message;
 	}
 }
