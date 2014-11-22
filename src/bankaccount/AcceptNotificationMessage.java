@@ -1,16 +1,22 @@
 package bankaccount;
 
-public class AcceptNotificationMessage extends Message
-{
-	private Proposal proposal;
+import bankaccount.Pair;
+
+public class AcceptNotificationMessage extends Message {
+	private Pair ballotNum;
+	private int value;
 	
-	public AcceptNotificationMessage(Proposal proposal)
-	{
-		this.proposal = proposal;
+	public AcceptNotificationMessage(Pair ballotNum, int value) {
+		this.ballotNum = ballotNum;
+		this.value = value;
 	}
-	
-	public Proposal getProposal()
-	{
-		return proposal;
+
+	public Pair getBallotNum() {
+		return ballotNum;
+	}
+
+	public int getValue() {
+		return value;
 	}
 }
+

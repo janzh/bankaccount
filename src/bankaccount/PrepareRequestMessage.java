@@ -1,7 +1,6 @@
 package bankaccount;
 
-public class PrepareRequestMessage extends Message
-{
+public class PrepareRequestMessage extends Message {
 	private Pair ballotNum; 
 	
 	public PrepareRequestMessage(Pair ballotNum) {

@@ -1,12 +1,10 @@
 package bankaccount;
 
-public class AcceptRequestMessage extends Message
-{
+public class AcceptRequestMessage extends Message {
 	private Pair ballotNum;
 	private int value;
 	
-	public AcceptRequestMessage(Pair ballotNum, int value)
-	{
+	public AcceptRequestMessage(Pair ballotNum, int value) {
 		this.ballotNum = ballotNum;
 		this.value = value;
 	}
