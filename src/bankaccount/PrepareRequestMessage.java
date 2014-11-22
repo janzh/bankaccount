@@ -2,22 +2,13 @@ package bankaccount;
 
 public class PrepareRequestMessage extends Message
 {
-	private int csn;
-	private int psn;
+	private Pair ballotNum; 
 	
-	public PrepareRequestMessage(int csn, int psn)
-	{
-		this.csn = csn;
-		this.psn = psn;
+	public PrepareRequestMessage(Pair ballotNum) {
+		this.ballotNum = ballotNum;
 	}
 	
-	public int getPsn()
-	{
-		return psn;
-	}
-	
-	public int getCsn()
-	{
-		return csn;
+	public Pair getBallotNum() {
+		return ballotNum;
 	}
 }

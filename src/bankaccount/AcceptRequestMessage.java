@@ -1,13 +1,11 @@
-package paxos;
+package bankaccount;
 
-import bankaccount.Pair;
-
-public class AcceptNotificationMessage extends Message
+public class AcceptRequestMessage extends Message
 {
 	private Pair ballotNum;
 	private int value;
 	
-	public AcceptNotificationMessage(Pair ballotNum, int value)
+	public AcceptRequestMessage(Pair ballotNum, int value)
 	{
 		this.ballotNum = ballotNum;
 		this.value = value;

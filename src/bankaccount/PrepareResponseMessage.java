@@ -1,30 +1,26 @@
 package bankaccount;
 
-public class PrepareResponseMessage extends Message
-{
-	private int csn;
-	private int minPsn;
-	private Proposal proposal;
+public class PrepareResponseMessage extends Message {
+	private Pair ballotNum;
+	private Pair acceptNum;
+	private int acceptVal;
 	
-	public PrepareResponseMessage(int csn, int minPsn, Proposal proposal)
-	{
-		this.proposal = proposal;
-		this.minPsn = minPsn;
-		this.csn = csn;
+	public PrepareResponseMessage(Pair ballotNum, Pair acceptNum, int acceptVal) {;
+		this.ballotNum = ballotNum;
+		this.acceptNum = acceptNum;
+		this.acceptVal = acceptVal;
 	}
 	
-	public Proposal getProposal()
-	{
-		return proposal;
+	public Pair getBallotNum() {
+		return ballotNum;
 	}
-	
-	public int getCsn()
-	{
-		return csn;
+
+
+	public Pair getAcceptNum() {
+		return acceptNum;
 	}
-	
-	public int getMinPsn()
-	{
-		return minPsn;
+
+	public int getAcceptVal() {
+		return acceptVal;
 	}
 }
