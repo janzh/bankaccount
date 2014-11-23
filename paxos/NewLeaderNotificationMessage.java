@@ -1,6 +1,6 @@
 package paxos;
 
-public class NewLeaderNotificationMessage extends Message
+public class NewLeaderNotificationMessage extends Message1
 {
 	private int num;
 	

@@ -186,7 +186,7 @@ public class Node
 		psn += nodes.size();
 	}
 	
-	private void broadcast(Message m)
+	private void broadcast(Message1 m)
 	{
 		if(!isRunning)
 			return;
@@ -204,7 +204,7 @@ public class Node
 		}
 	}
 	
-	private void unicast(NodeLocationData node, Message m)
+	private void unicast(NodeLocationData node, Message1 m)
 	{
 		if(!isRunning)
 			return;
@@ -255,7 +255,7 @@ public class Node
 		}
 	}
 	
-	private synchronized void deliver(Message m)
+	private synchronized void deliver(Message1 m)
 	{
 		if(!isRunning)
 			return;
@@ -625,7 +625,7 @@ public class Node
 				{
 					socket = serverSocket.accept();
 					in = new ObjectInputStream(socket.getInputStream());
-					deliver((Message)in.readObject());
+					deliver((Message1)in.readObject());
 				}
 				catch(IOException e)
 				{

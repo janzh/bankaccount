@@ -1,6 +1,7 @@
 package bankaccount;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import bankaccount.ReplicaEvent.Status;
 import bankaccount.ReplicaEvent.Type;
@@ -18,9 +19,17 @@ public class Replica {
 	// Latest accepted value
 	private double acceptVal;
 	
+	// Proposer Variables
+	// <id of transaction, value of proposal>
+	private Map<Integer, Integer> proposals;
+	// Phase1 list of received prepare responses
+	private ArrayList<PrepareResponseMessage> prepResponseList;
+	// Phase2 list of received accepted notifications
+	private ArrayList<AcceptNotificationMessage> acceptNotificationList;
+	
 	private ArrayList<Replica> replicas;
 	private NodeLocationData locationData;
-	private String message;
+	private Message message;
 	private ServerListener serverListener;
 	
 	public Replica(String host, int port, int id){
@@ -36,6 +45,8 @@ public class Replica {
 		locationData = new NodeLocationData(host, port, id);
 		serverListener = new ServerListener(this);
 		serverListener.start();
+		
+		prepResponseList = new ArrayList<PrepareResponseMessage>();
 	}
 	
 	public void setListener(ReplicaListener listener){
@@ -93,13 +104,162 @@ public class Replica {
 	private void fireActionPerformed(Type type, Status status){
 		if (listener != null) listener.replicaActionPerformed(new ReplicaEvent(type, status, account.getBalance()));
 	}
-	
-	private void fireActionPerformed(Type type, String message){
+
+	private void fireActionPerformed(Type type, Message message){
 		if (listener != null) listener.replicaActionPerformed(new ReplicaEvent(type, message));
+		deliver(message);
 	}
 
-	public void setMessage(String receivedMessage) {
+	public void setMessage(Message receivedMessage) {
 		this.message = receivedMessage;
 		fireActionPerformed(Type.RECEIVE, message);	
+	}
+	/*
+	 * Return true if ballot 1 is higher than ballot 2
+	 */
+	private boolean isBallotBigger(Pair bal1, Pair bal2) {
+		if(bal1.getBallotNum() > bal2.getBallotNum()) {
+			return true;
+		}
+		else if(bal1.getBallotNum() == bal2.getBallotNum() && bal1.getId() > bal2.getId()){
+			return true;
+		}
+		return false;
+	}
+	
+	private synchronized void deliver(Message m) {
+		if(!isAlive) {
+			return;
+		}
+		else if(m instanceof ProposeToLeaderMessage) {
+			// TODO: Should not run phase 1 when leader has not changes, so proposeToLeaderMessage should else go to Phase2
+			// TODO: IF leader THEN -->
+				// Store all received transaction-proposals in a Map
+			// Remove all response, as we are starting a new phase1
+			prepResponseList.clear();
+				ProposeToLeaderMessage proposeMessage = (ProposeToLeaderMessage)m;
+				proposals.put(proposeMessage.getId(), proposeMessage.getValue());
+				
+				Pair newBallot = new Pair();
+				newBallot.setBallotNum(this.ballotNum.getBallotNum() + 1);
+				newBallot.setBallotNum(this.id);
+				PrepareRequestMessage prepareRequest = new PrepareRequestMessage(newBallot);
+				prepareRequest.setSender(this.locationData);
+				broadcast(prepareRequest);
+			// Else
+			return;
+		}
+		else if(m instanceof PrepareRequestMessage) {
+			PrepareRequestMessage prepareRequest = (PrepareRequestMessage)m;
+			Pair bal = prepareRequest.getBallotNum();
+			if (isBallotBigger(bal, this.ballotNum)) {
+				this.ballotNum = bal;
+				PrepareResponseMessage prepareResponse = new PrepareResponseMessage(this.ballotNum, this.acceptNum, this.acceptVal);
+				prepareResponse.setSender(this.locationData);
+				unicast(prepareRequest.getSender(), prepareResponse);
+			}
+			else {return;}
+		}
+
+		else if(m instanceof PrepareResponseMessage) {
+			PrepareResponseMessage prepareResponse = (PrepareResponseMessage)m;
+			prepResponseList.add(prepareResponse);
+			
+			// Check if response has come from a majority
+			if(prepResponseList.size() > (replicas.size() / 2)) {
+				double highestVal = 0;
+				double myVal;
+				PrepareResponseMessage highestResponse = null;
+				for (PrepareResponseMessage response : prepResponseList) {
+					double tempVal = response.getAcceptVal();
+					if(tempVal > highestVal) {
+						highestVal = tempVal;
+					}
+					if(highestResponse.equals(null)){
+						highestResponse = response;
+					}
+					else if(isBallotBigger(response.getAcceptNum(), highestResponse.getBallotNum())){
+						highestResponse = response;
+					}
+				}
+				if(highestVal == 0) {myVal = initVal;} // TODO: find a way to store init proposed value
+				else {
+					myVal = highestResponse.getAcceptVal();
+				}
+				AcceptRequestMessage acceptReqMessage = new AcceptRequestMessage(prepareResponse.getBallotNum(), myVal);
+				acceptReqMessage.setSender(this.locationData);
+				unicast(this.locationData, acceptReqMessage);
+				
+			}
+			else {return;}
+		}
+
+		else if(m instanceof AcceptRequestMessage) {
+			AcceptRequestMessage acceptRequest = (AcceptRequestMessage)m;
+			Pair bal = acceptRequest.getBallotNum();
+			if(isBallotBigger(bal, this.ballotNum)) {
+				this.acceptNum = bal;
+				this.acceptVal = acceptRequest.getValue();
+				AcceptNotificationMessage acceptNotification = new AcceptNotificationMessage(this.acceptNum, this.acceptVal);
+				acceptNotification.setSender(this.locationData);
+				unicast(acceptRequest.getSender() ,acceptNotification); 
+				// TODO: Broadcast first time?, unicast the rest?
+			}
+			else {
+				return;
+			}
+		}
+
+		else if(m instanceof AcceptNotificationMessage) {
+			AcceptNotificationMessage acceptNot = (AcceptNotificationMessage)m;
+			acceptNotificationList.add(acceptNot);
+			// Check if notification has come from a majority
+			if(acceptNotificationList.size() > (replicas.size() / 2)){
+				// Decide value
+				decide(acceptNot.getValue());
+				
+				DecideMessage decideMessage = new DecideMessage(acceptNot.getValue());
+				decideMessage.setSender(this.locationData);
+				broadcast(decideMessage);
+			}
+			// TODO: Implement case
+			
+			return;
+		}
+		else if(m instanceof DecideMessage){
+			DecideMessage decideMsg = (DecideMessage) m);
+			decide(decideMsg.getValue());
+		}
+	}
+	private void decide(double value) {
+		// TODO Implement method
+		
+	}
+	/* 
+	 * Send message to one receiver
+	 * @Param m - Message to be sent
+	 * @Param nodeLocationData - Data of location of the node to receive message 
+	 */
+	private void unicast(NodeLocationData nodeLocationData, Message m) {
+		// TODO: Implement method
+		if(!isAlive) {return;}
+	}
+	private void broadcast(Message m) {
+		// TODO: Implement method
+		if(!isAlive) {return;}
+		
+		m.setSender(locationData);
+		
+		for(Replica replica : replicas)
+		{
+			// immediately deliver to self
+			if(this.locationData.equals(replica.getLocationData())) {
+				deliver(m);
+			}
+			// send message
+			else {
+				unicast(replica.getLocationData(), m);
+			}
+		}
 	}
 }

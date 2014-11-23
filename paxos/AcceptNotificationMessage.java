@@ -1,6 +1,6 @@
 package paxos;
 
-public class AcceptNotificationMessage extends Message
+public class AcceptNotificationMessage extends Message1
 {
 	private Proposal proposal;
 	

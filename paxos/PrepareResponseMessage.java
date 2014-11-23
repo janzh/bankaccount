@@ -1,6 +1,6 @@
 package paxos;
 
-public class PrepareResponseMessage extends Message
+public class PrepareResponseMessage extends Message1
 {
 	private int csn;
 	private int minPsn;

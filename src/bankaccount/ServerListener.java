@@ -1,9 +1,9 @@
 package bankaccount;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class ServerListener extends Thread
 {
@@ -28,18 +28,17 @@ public class ServerListener extends Thread
 	public void run()
 	{
 		Socket socket = null;
-		Scanner scanner;
+		ObjectInputStream in;
 		while(isRunning)
 		{
 			try
 			{
 				socket = serverSocket.accept();
-				scanner = new Scanner(socket.getInputStream());
-				String receivedMessage = scanner.nextLine();
+				in = new ObjectInputStream(socket.getInputStream());
 				// TODO: Show message
-				replica.setMessage(receivedMessage);
+				replica.setMessage((Message)in.readObject());
 			}
-			catch(IOException e)
+			catch(IOException | ClassNotFoundException e)
 			{
 				System.out.println("IOException while trying to accept connection!");
 				e.printStackTrace();

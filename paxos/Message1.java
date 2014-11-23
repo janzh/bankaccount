@@ -2,7 +2,7 @@ package paxos;
 
 import java.io.Serializable;
 
-public abstract class Message implements Serializable
+public abstract class Message1 implements Serializable
 {
 	protected NodeLocationData sender;
 	protected NodeLocationData reciever;

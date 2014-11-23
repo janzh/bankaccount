@@ -4,9 +4,9 @@ import bankaccount.Pair;
 
 public class AcceptNotificationMessage extends Message {
 	private Pair ballotNum;
-	private int value;
+	private double value;
 	
-	public AcceptNotificationMessage(Pair ballotNum, int value) {
+	public AcceptNotificationMessage(Pair ballotNum, double value) {
 		this.ballotNum = ballotNum;
 		this.value = value;
 	}
@@ -15,7 +15,7 @@ public class AcceptNotificationMessage extends Message {
 		return ballotNum;
 	}
 
-	public int getValue() {
+	public double getValue() {
 		return value;
 	}
 }

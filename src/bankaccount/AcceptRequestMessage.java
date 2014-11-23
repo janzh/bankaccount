@@ -2,9 +2,9 @@ package bankaccount;
 
 public class AcceptRequestMessage extends Message {
 	private Pair ballotNum;
-	private int value;
+	private double value;
 	
-	public AcceptRequestMessage(Pair ballotNum, int value) {
+	public AcceptRequestMessage(Pair ballotNum, double value) {
 		this.ballotNum = ballotNum;
 		this.value = value;
 	}
@@ -13,7 +13,7 @@ public class AcceptRequestMessage extends Message {
 		return ballotNum;
 	}
 
-	public int getValue() {
+	public double getValue() {
 		return value;
 	}
 }

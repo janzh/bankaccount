@@ -3,9 +3,9 @@ package bankaccount;
 public class PrepareResponseMessage extends Message {
 	private Pair ballotNum;
 	private Pair acceptNum;
-	private int acceptVal;
+	private double acceptVal;
 	
-	public PrepareResponseMessage(Pair ballotNum, Pair acceptNum, int acceptVal) {;
+	public PrepareResponseMessage(Pair ballotNum, Pair acceptNum, double acceptVal) {;
 		this.ballotNum = ballotNum;
 		this.acceptNum = acceptNum;
 		this.acceptVal = acceptVal;
@@ -15,12 +15,11 @@ public class PrepareResponseMessage extends Message {
 		return ballotNum;
 	}
 
-
 	public Pair getAcceptNum() {
 		return acceptNum;
 	}
 
-	public int getAcceptVal() {
+	public double getAcceptVal() {
 		return acceptVal;
 	}
 }
