@@ -1,6 +1,7 @@
 package bankaccount;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -9,6 +10,33 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Communication {
+	
+	public static void sendMessage(NodeLocationData receiverLocation, Message msg){
+		Socket socket = null;
+		ObjectOutputStream out = null;
+		try {
+			InetAddress inetAddress = InetAddress.getByName(receiverLocation.getHost());
+			int port = receiverLocation.getPort();
+
+			socket = new Socket(inetAddress, port);
+			
+			out = new ObjectOutputStream(socket.getOutputStream());
+			out.writeObject(msg);
+			out.flush();
+
+		} catch (UnknownHostException ex) {
+		} catch (IOException ex) {
+		} finally {
+			try
+			{
+				if(out != null)
+					out.close();
+				if(socket != null)
+					socket.close();
+			}
+			catch(IOException e){}
+		}	
+	}
 
 	public static void sendMessage(Replica receiver, String message){
 		Socket socket = null;

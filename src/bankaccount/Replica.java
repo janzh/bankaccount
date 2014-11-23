@@ -136,13 +136,13 @@ public class Replica {
 		prepareRequest.setSender(this.locationData);
 		broadcast(prepareRequest);
 	}
-	
+
 	private synchronized void deliver(Message m) {
 		if(!isAlive) {
 			return;
 		}
 		else if(m instanceof ProposeToLeaderMessage) {
-			// TODO: Should not run phase 1 when leader has not changes, so proposeToLeaderMessage should else go to Phase2
+			// TODO: Should not run phase 1 when leader has not changed, so proposeToLeaderMessage should else go to Phase2
 			
 			ProposeToLeaderMessage proposeMessage = (ProposeToLeaderMessage)m;
 			if(locationData.isLeader()) {
@@ -248,14 +248,11 @@ public class Replica {
 	 * @Param nodeLocationData - Data of location of the node to receive message 
 	 */
 	private void unicast(NodeLocationData nodeLocationData, Message m) {
-		// TODO: Implement method
 		if(!isAlive) {return;}
+		Communication.sendMessage(nodeLocationData, m);
 	}
 	private void broadcast(Message m) {
-		// TODO: Implement method
 		if(!isAlive) {return;}
-		
-		m.setSender(locationData);
 		
 		for(Replica replica : replicas)
 		{
