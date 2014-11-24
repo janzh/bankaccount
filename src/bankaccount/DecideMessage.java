@@ -1,13 +1,13 @@
 package bankaccount;
 
 public class DecideMessage extends Message {
-	double value;
+	private Proposal proposal;
 	
-	public DecideMessage(double value){
-		this.value = value;
+	public DecideMessage(Proposal proposal){
+		this.proposal = proposal;
 	}
 	
-	public double getValue(){
-		return value;
+	public Proposal getProposal(){
+		return proposal;
 	}
 }

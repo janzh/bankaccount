@@ -1,19 +1,13 @@
 package bankaccount;
 
 public class ProposeToLeaderMessage extends Message {
-	private int id;
-	private int value;
+	private Proposal proposal;
 	
-	public ProposeToLeaderMessage(int id, int value) {
-		this.id = id;
-		this.value = value;
+	public ProposeToLeaderMessage(Proposal proposal) {
+		this.proposal = proposal;
 	}
 
-	public int getId() {
-		return id;
-	}
-
-	public int getValue() {
-		return value;
+	public Proposal getProposal() {
+		return proposal;
 	}
 }

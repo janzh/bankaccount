@@ -14,5 +14,6 @@ public class Main {
 			CLI2 cli = new CLI2(r);
 			r.setListener(cli);
 		}
+		replicas.get(2).getLocationData().becomeLeader();
 	}
 }

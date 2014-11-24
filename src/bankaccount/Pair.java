@@ -1,9 +1,14 @@
 package bankaccount;
 
-public class Pair {
+import java.io.Serializable;
+
+public class Pair implements Serializable{
 	private int id;
 	private int ballotNum;
-
+	
+	public Pair(int id) {
+		this.id = id;
+	}
 	public int getId() {
 		return id;
 	}
