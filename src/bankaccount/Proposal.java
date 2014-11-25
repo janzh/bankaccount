@@ -33,7 +33,7 @@ public class Proposal implements Serializable{
 	}
 	
 	public boolean isEqual(Proposal p) {
-		if(this.proposalNum == p.getProposalNum() && this.value == p.getValue()) {
+		if(this.proposerId == p.proposerId && this.proposalNum == p.getProposalNum() && this.value == p.getValue()) {
 			return true;
 		}
 		return false;

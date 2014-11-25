@@ -135,6 +135,7 @@ public class Replica {
 		}
 		// Remove all responses, since we are starting a new phase1
 		prepResponseList.clear();
+		receivedProposals.clear();
 		
 		Pair newBallot = new Pair(this.id);
 		newBallot.setBallotNum(this.ballotNum.getBallotNum() + 1);
@@ -150,9 +151,13 @@ public class Replica {
 		}
 		else if(m instanceof ProposeToLeaderMessage) {
 			// TODO: Should not run phase 1 when leader has not changed, so proposeToLeaderMessage should else go to Phase2
+			System.out.println("------------------------------------------------------");
 			System.out.println(this.id + ": ProposeToLeaderMessage received at replica");
 			
 			ProposeToLeaderMessage proposeMessage = (ProposeToLeaderMessage)m;
+			// When first proposal is received, leader starts phase1
+			
+			// Latter proposals lead straight to phase2
 			if(locationData.isLeader()) {
 				// Store all received transaction-proposals in a Map
 				receivedProposals.add(proposeMessage.getProposal());
@@ -180,7 +185,7 @@ public class Replica {
 			prepResponseList.add(prepareResponse);
 			
 			// Check if response has come from a majority
-			if(prepResponseList.size() > (replicas.size() / 2)) {
+			if(prepResponseList.size() == ((replicas.size() / 2) + 1)) {
 				double highestVal = 0;
 				double myVal;
 				PrepareResponseMessage highestResponse = null;
