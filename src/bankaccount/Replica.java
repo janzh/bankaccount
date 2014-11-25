@@ -11,6 +11,8 @@ public class Replica {
 	private Log log;
 	private ReplicaListener listener;
 	private boolean isAlive;
+	// True is it has received a majority of ACK's for prepare requests
+	private boolean hasMajorityBallot;
 	private int id;
 	// Latest ballot pi took part in
 	private Pair ballotNum;
@@ -46,6 +48,7 @@ public class Replica {
 		log = new Log();
 		replicas = new ArrayList<>();
 		isAlive = true;
+		hasMajorityBallot = false;
 		
 		locationData = new NodeLocationData(host, port, id);
 		serverListener = new ServerListener(this);
@@ -133,16 +136,10 @@ public class Replica {
 			}
 			else {replica.getLocationData().becomeLeader();}
 		}
-		// Remove all responses, since we are starting a new phase1
+		// Remove all responses and received proposals, since we are starting a new phase1
 		prepResponseList.clear();
 		receivedProposals.clear();
-		
-		Pair newBallot = new Pair(this.id);
-		newBallot.setBallotNum(this.ballotNum.getBallotNum() + 1);
-		newBallot.setId(this.id);
-		PrepareRequestMessage prepareRequest = new PrepareRequestMessage(newBallot);
-		prepareRequest.setSender(this.locationData);
-		broadcast(prepareRequest);
+		hasMajorityBallot = false;
 	}
 
 	private synchronized void deliver(Message m) {
@@ -156,9 +153,19 @@ public class Replica {
 			
 			ProposeToLeaderMessage proposeMessage = (ProposeToLeaderMessage)m;
 			// When first proposal is received, leader starts phase1
-			
-			// Latter proposals lead straight to phase2
-			if(locationData.isLeader()) {
+			if(locationData.isLeader() && receivedProposals.isEmpty()) { 
+				receivedProposals.add(proposeMessage.getProposal());
+				Pair newBallot = new Pair(this.id);
+				newBallot.setBallotNum(this.ballotNum.getBallotNum() + 1);
+				newBallot.setId(this.id);
+				PrepareRequestMessage prepareRequest = new PrepareRequestMessage(newBallot);
+				prepareRequest.setSender(this.locationData);
+				broadcast(prepareRequest);
+			}
+			// If majority has joined ballot, latter proposals lead straight to phase2
+			else if(locationData.isLeader()) {
+				while(!hasMajorityBallot) {
+				}
 				// Store all received transaction-proposals in a Map
 				receivedProposals.add(proposeMessage.getProposal());
 				AcceptNotificationMessage acceptReqMessage = new AcceptNotificationMessage(this.ballotNum, proposeMessage.getProposal());
@@ -166,12 +173,15 @@ public class Replica {
 				broadcast(acceptReqMessage);
 
 			}
-			else {return;}
+			// Send it to all Replicas, because this is not the leader
+			else {broadcast(m);}
 		}
 		else if(m instanceof PrepareRequestMessage) {
+			System.out.println(this.id + ": PrepareRequestMessage received at replica");
+			
 			PrepareRequestMessage prepareRequest = (PrepareRequestMessage)m;
 			Pair bal = prepareRequest.getBallotNum();
-			if (isBallotBigger(bal, this.ballotNum)) {
+			if (isBallotBiggerOrEqual(bal, this.ballotNum)) {
 				this.ballotNum = bal;
 				PrepareResponseMessage prepareResponse = new PrepareResponseMessage(this.ballotNum, this.acceptNum, this.acceptVal);
 				prepareResponse.setSender(this.locationData);
@@ -181,34 +191,39 @@ public class Replica {
 		}
 
 		else if(m instanceof PrepareResponseMessage) {
+			System.out.println(this.id + ": PrepareResponseMessage received at replica");
+			
 			PrepareResponseMessage prepareResponse = (PrepareResponseMessage)m;
 			prepResponseList.add(prepareResponse);
 			
 			// Check if response has come from a majority
 			if(prepResponseList.size() == ((replicas.size() / 2) + 1)) {
+				hasMajorityBallot = true;
+				
 				double highestVal = 0;
-				double myVal;
-				PrepareResponseMessage highestResponse = null;
+//				double myVal;
+//				PrepareResponseMessage highestResponse = null;
 				for (PrepareResponseMessage response : prepResponseList) {
 					double tempVal = response.getAcceptVal();
 					if(tempVal > highestVal) {
 						highestVal = tempVal;
 					}
-					if(highestResponse.equals(null)){
-						highestResponse = response;
-					}
-					else if(isBallotBigger(response.getAcceptNum(), highestResponse.getBallotNum())){
-						highestResponse = response;
-					}
+//					if(isBallotBigger(response.getAcceptNum(), highestResponse.getBallotNum())){
+//						highestResponse = response;
+//					}
 				}
-				if(highestVal == 0) {myVal = 0;} // TODO: find a way to store init proposed value
+				AcceptNotificationMessage acceptReqMessage;
+				if(highestVal == 0) {
+//					myVal = receivedProposals.get(0).getValue();
+					acceptReqMessage = new AcceptNotificationMessage(prepareResponse.getBallotNum(), receivedProposals.get(0));
+					} // TODO: find a way to store init proposed value
 				else {
-					myVal = highestResponse.getAcceptVal();
+//					myVal = highestResponse.getAcceptVal();
+//					acceptReqMessage = new AcceptNotificationMessage(prepareResponse.getBallotNum(), myVal);
+					acceptReqMessage = new AcceptNotificationMessage(prepareResponse.getBallotNum(), receivedProposals.get(0));
 				}
-				AcceptNotificationMessage acceptReqMessage = new AcceptNotificationMessage(prepareResponse.getBallotNum(), myVal);
 				acceptReqMessage.setSender(this.locationData);
-				broadcast(acceptReqMessage);
-				
+				broadcast(acceptReqMessage);				
 			}
 			else {return;}
 		}
@@ -222,7 +237,7 @@ public class Replica {
 				System.out.println(this.id + ": 1.st acceptNotificationMessage received at replica");
 				
 				acceptNotificationList.add(acceptNot);
-				if(isBallotBigger(bal, this.ballotNum)) {
+				if(isBallotBiggerOrEqual(bal, this.ballotNum)) {
 					this.acceptNum = bal;
 					this.acceptVal = acceptNot.getProposal().getValue();
 					AcceptNotificationMessage acceptNotification = new AcceptNotificationMessage(acceptNot.getBallotNum(), acceptNot.getProposal());
@@ -232,7 +247,7 @@ public class Replica {
 				else {return;}
 			}
 			else if(receivedAcceptNot(acceptNot)){
-				System.out.println(this.id + ": acceptNotificationMessage Received at replica");
+				System.out.println(this.id + ": acceptNotificationMessage received at replica");
 				
 				acceptNotificationList.add(acceptNot);
 				// Check if notification has come from a majority
@@ -309,11 +324,14 @@ public class Replica {
 	/*
 	 * Return true if ballot 1 is higher than ballot 2
 	 */
-	private boolean isBallotBigger(Pair bal1, Pair bal2) {
+	private boolean isBallotBiggerOrEqual(Pair bal1, Pair bal2) {
 		if(bal1.getBallotNum() > bal2.getBallotNum()) {
 			return true;
 		}
 		else if(bal1.getBallotNum() == bal2.getBallotNum() && bal1.getId() > bal2.getId()){
+			return true;
+		}
+		else if(bal1.getBallotNum() == bal2.getBallotNum() && bal1.getId() == bal2.getId()) {
 			return true;
 		}
 		return false;
