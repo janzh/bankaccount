@@ -81,8 +81,7 @@ public class Replica {
 	}
 	
 	public void deposit(double value){
-		Proposal proposal;
-		proposal = new Proposal(this.id, myProposals.size(), value, "d");
+		Proposal proposal = new Proposal(this.id, myProposals.size(), value, "d");
 		myProposals.add(proposal);
 		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);
 		proposeMsg.setSender(this.locationData);
@@ -90,8 +89,12 @@ public class Replica {
 		
 	}
 	public void withdraw(double value){
-		account.withdraw(value);
-		fireActionPerformed(Type.WITHDRAW, Status.FAIL);
+		Proposal proposal = new Proposal(this.id, myProposals.size(), value, "w");
+		myProposals.add(proposal);
+		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);
+		proposeMsg.setSender(this.locationData);
+		unicast(getCurrentLeader().getLocationData(), proposeMsg);
+
 	}
 	public void balance(){
 		fireActionPerformed(Type.BALANCE, Status.SUCCESS);
@@ -219,8 +222,7 @@ public class Replica {
 					this.acceptVal = acceptNot.getProposal().getValue();
 					AcceptNotificationMessage acceptNotification = new AcceptNotificationMessage(acceptNot.getBallotNum(), acceptNot.getProposal());
 					acceptNotification.setSender(this.locationData);
-					broadcast(acceptNotification); 
-					// TODO: Broadcast first time?, unicast the rest?
+					broadcast(acceptNotification);
 				}
 				else {return;}
 			}
@@ -262,13 +264,16 @@ public class Replica {
 		// Perform transaction withdrawal
 		if(proposal.getType().equals("w")) {
 			account.withdraw(proposal.getValue());
+			if(proposal.getProposerId() == this.id) {
+				fireActionPerformed(Type.DEPOSIT, Status.SUCCESS);
+			}
 		}
 		// Perform transaction deposit
 		else if(proposal.getType().equals("d")) {
 			account.deposit(proposal.getValue());
-		}
-		if(proposal.getProposerId() == this.id) {
-			fireActionPerformed(Type.DEPOSIT, Status.SUCCESS);
+			if(proposal.getProposerId() == this.id) {
+				fireActionPerformed(Type.WITHDRAW, Status.SUCCESS);
+			}
 		}
 	}
 	/* 
@@ -307,11 +312,11 @@ public class Replica {
 		}
 		return false;
 	}
-	
+	// Check to see if acceptor has received acceptNots from exactly the # of majority
 	private boolean receivedExtMajorityAcceptors(AcceptNotificationMessage acceptNot){
 		int counter = 0;
 		for(int i = 0; i < acceptNotificationList.size(); i++){
-			if((acceptMsgsAreEqual(acceptNotificationList.get(i), acceptNot))) {
+			if(acceptNotificationList.get(i).isEqual(acceptNot)) {
 				counter++;
 			}
 		}
@@ -330,25 +335,17 @@ public class Replica {
 		}
 		return null;
 	}
-	
+	// Check to see if acceptor has already accepted this proposal
 	private boolean receivedAcceptNot(AcceptNotificationMessage acceptNot) {
 		for(int i = 0; i < acceptNotificationList.size(); i++){
-			if(acceptMsgsAreEqual(acceptNotificationList.get(i), acceptNot)) {
+			if(acceptNotificationList.get(i).isEqual(acceptNot)) {
 				return true;
 			}
 		}
 		return false;
 	}
-	private boolean acceptMsgsAreEqual(AcceptNotificationMessage msg1, AcceptNotificationMessage msg2) {
-		if (msg1.getBallotNum().getBallotNum() == msg2.getBallotNum().getBallotNum()) {
-			if(msg1.getBallotNum().getId() == msg2.getBallotNum().getId()) {
-				if(msg1.getProposal().isEqual(msg2.getProposal())) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+
+	// Check to see if learner has already learned/decided this value from proposal
 	private boolean receivedDecideMsg(DecideMessage msg){
 		for(int i = 0; i < learnedProposals.size(); i++){
 			if(learnedProposals.get(i).isEqual(msg.getProposal())) {

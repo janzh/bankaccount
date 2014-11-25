@@ -28,5 +28,13 @@ public class AcceptNotificationMessage extends Message {
 	public double getValue() {
 		return value;
 	}
+	
+	public boolean isEqual(AcceptNotificationMessage msg2) {
+		// If both pair of Proposal and Ballots are equal, the messages are equal
+		if (this.getBallotNum().isEqual(msg2.getBallotNum()) && this.getProposal().isEqual(msg2.getProposal())) {
+			return true;
+		}
+		return false;
+	}
 }
 

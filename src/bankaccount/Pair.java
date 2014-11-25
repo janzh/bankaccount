@@ -24,4 +24,11 @@ public class Pair implements Serializable{
 	public void setBallotNum(int ballotNum) {
 		this.ballotNum = ballotNum;
 	}
+	
+	public boolean isEqual(Pair pair) {
+		if (this.ballotNum == pair.ballotNum && this.getId() == pair.getId()) {
+			return true;
+		}
+		return false;
+	}
 }
