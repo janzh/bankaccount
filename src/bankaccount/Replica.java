@@ -266,6 +266,7 @@ public class Replica {
 			account.withdraw(proposal.getValue());
 			if(proposal.getProposerId() == this.id) {
 				fireActionPerformed(Type.DEPOSIT, Status.SUCCESS);
+				// TODO: Must handle
 			}
 		}
 		// Perform transaction deposit
