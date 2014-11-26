@@ -23,6 +23,7 @@ public class Replica {
 	private double acceptVal;
 	
 	// Proposer Variables
+	private ArrayList<Proposal> notAcceptedProposals;
 	private ArrayList<Proposal> myProposals; // list of proposals made by this replica
 	private ArrayList<Proposal> receivedProposals; // list of proposals received as leader
 	
@@ -55,6 +56,7 @@ public class Replica {
 		serverListener = new ServerListener(this);
 		serverListener.start();
 		
+		notAcceptedProposals = new ArrayList<Proposal>();
 		myProposals = new ArrayList<Proposal>();
 		receivedProposals = new ArrayList<Proposal>();
 		prepResponseList = new ArrayList<PrepareResponseMessage>();
@@ -237,15 +239,23 @@ public class Replica {
 			if(!receivedAcceptNot(acceptNot)) {
 				System.out.println(this.id + ": 1.st acceptNotificationMessage received at replica");
 				
-				acceptNotificationList.add(acceptNot);
 				if(isBallotBiggerOrEqual(bal, this.ballotNum)) {
+					acceptNotificationList.add(acceptNot);
+					
 					this.acceptNum = bal;
 					this.acceptVal = acceptNot.getProposal().getValue();
 					AcceptNotificationMessage acceptNotification = new AcceptNotificationMessage(acceptNot.getBallotNum(), acceptNot.getProposal());
 					acceptNotification.setSender(this.locationData);
 					broadcast(acceptNotification);
 				}
-				else {return;}
+				// If the proposal is not accepted, notify the proposer Replica
+				else {
+					NotAcceptedNotificationMessage notAcceptedNot = new NotAcceptedNotificationMessage(acceptNot.getProposal());
+					notAcceptedNot.setSender(this.locationData);
+					int proposerId = acceptNot.getProposal().getProposerId();
+					NodeLocationData proposerData = replicas.get(proposerId).getLocationData();
+					unicast(proposerData, notAcceptedNot);
+				}
 			}
 			else if(receivedAcceptNot(acceptNot)){
 				System.out.println(this.id + ": acceptNotificationMessage received at replica");
@@ -272,6 +282,33 @@ public class Replica {
 				learnedProposals.add(proposal);
 				decide(proposal);
 			}
+		}
+		// Sends a fail message to CLI, if a majority has not accepted(rejected) the proposal 
+		else if(m instanceof NotAcceptedNotificationMessage) {
+			System.out.println(this.id + ": NotAcceptedNotficationMessage received at replica");
+			
+			NotAcceptedNotificationMessage notAcceptedNot = (NotAcceptedNotificationMessage)m;
+			notAcceptedProposals.add(notAcceptedNot.getProposal());
+			
+			if(receivedExtMajorityNotAcceptors(notAcceptedNot) ) {
+				Proposal proposal = notAcceptedNot.getProposal();
+				if(proposal.getType().equals("w")) {
+					account.withdraw(proposal.getValue());
+					if(proposal.getProposerId() == this.id) {
+						fireActionPerformed(Type.DEPOSIT, Status.FAIL);
+						// TODO: Must handle
+					}
+				}
+				// Perform transaction deposit
+				else if(proposal.getType().equals("d")) {
+					account.deposit(proposal.getValue());
+					if(proposal.getProposerId() == this.id) {
+						fireActionPerformed(Type.WITHDRAW, Status.FAIL);
+					}
+				}
+			}
+			else {return;}
+			
 		}
 	}
 	/*
@@ -343,6 +380,20 @@ public class Replica {
 		int counter = 0;
 		for(int i = 0; i < acceptNotificationList.size(); i++){
 			if(acceptNotificationList.get(i).isEqual(acceptNot)) {
+				counter++;
+			}
+		}
+		if (counter == ((replicas.size() / 2)) + 1) {
+			return true;
+		}
+		else {return false;}
+	}
+	
+	// Check to see if proposer has received NotAcceptNots from exactly the # of majority
+	private boolean receivedExtMajorityNotAcceptors(NotAcceptedNotificationMessage notAcceptNot){
+		int counter = 0;
+		for(int i = 0; i < notAcceptedProposals.size(); i++){
+			if(notAcceptedProposals.get(i).isEqual(notAcceptNot.getProposal())) {
 				counter++;
 			}
 		}
