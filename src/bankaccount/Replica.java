@@ -1,12 +1,13 @@
 package bankaccount;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 import bankaccount.ReplicaEvent.Status;
 import bankaccount.ReplicaEvent.Type;
 
 public class Replica {
+	private static int decideMsgPeriod = 5000; // Ms of each period between broadcasting decideMsg to all
+	
 	private Account account;
 	private Log log;
 	private ReplicaListener listener;
@@ -232,7 +233,7 @@ public class Replica {
 			
 			AcceptNotificationMessage acceptNot = (AcceptNotificationMessage)m;
 			Pair bal = acceptNot.getBallotNum();
-			// If it is first time it receive the acceptMsg(it's sent from the leader)
+			// If it is the first time it receives the acceptMsg(it's sent from the leader)
 			if(!receivedAcceptNot(acceptNot)) {
 				System.out.println(this.id + ": 1.st acceptNotificationMessage received at replica");
 				
@@ -253,9 +254,10 @@ public class Replica {
 				// Check if notification has come from a majority
 				if(receivedExtMajorityAcceptors(acceptNot) ) {
 					// Decide value
-					DecideMessage decideMessage = new DecideMessage(acceptNot.getProposal());
-					decideMessage.setSender(this.locationData);
-					broadcast(decideMessage);
+					DecideMessage decideMsg = new DecideMessage(acceptNot.getProposal());
+					decideMsg.setSender(this.locationData);
+					Thread periodicThread = new PeriodicBroadcast(decideMsg);
+				    periodicThread.start();
 				}
 				else {return;}
 			}
@@ -377,5 +379,27 @@ public class Replica {
 			}
 		}
 		return false;
+	}
+	
+	// Periodically sends (DecideMessage) to all replicas each
+	public class PeriodicBroadcast extends Thread{
+		private DecideMessage decideMsg;
+		
+		public PeriodicBroadcast(DecideMessage decideMsg) {
+			this.decideMsg = decideMsg; 
+		}
+		@Override
+	    public void run()
+	    {
+	        while(true) {
+	           broadcast(decideMsg);
+	           try {
+				Thread.sleep(Replica.decideMsgPeriod);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	        }
+	    }
 	}
 }
