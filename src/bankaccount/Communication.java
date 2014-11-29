@@ -16,6 +16,7 @@ public class Communication {
 		ObjectOutputStream out = null;
 		try {
 			InetAddress inetAddress = InetAddress.getByName(receiverLocation.getHost());
+			
 			int port = receiverLocation.getPort();
 
 			socket = new Socket(inetAddress, port);

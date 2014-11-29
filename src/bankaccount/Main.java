@@ -15,5 +15,19 @@ public class Main {
 			r.setListener(cli);
 		}
 		replicas.get(0).becomeLeader();
+		
+//		for (int i=0; i<2; i++){
+//			Replica r = new Replica("192.168.0.15", 8001+i, i);
+//			r.setReplicaList(replicas);
+//			replicas.add(r);
+//			CLI2 cli = new CLI2(r);
+//			r.setListener(cli);
+//		}
+//		for (int j=2; j<5; j++){
+//			Replica r = new Replica("192.168.0.3", 8001+j, j);
+//			r.setReplicaList(replicas);
+//			replicas.add(r);
+//		}
+//		replicas.get(0).becomeLeader();
 	}
 }

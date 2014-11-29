@@ -83,7 +83,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
 		String text = textField.getText();
-        textArea.append(text + "\n");
+//        textArea.append(text + "\n");
         textField.selectAll();
  
         //Make sure the new text is visible, even if there
@@ -101,21 +101,12 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		else if(cmd.equals("withdraw")){
 			replica.withdraw(cmdValue);
 		}
-		else if(cmd.equals("send0")){
-			Communication.sendMessage(replica.getReplicaList().get(0), "Test message to 0");
-		}
-		else if(cmd.equals("send1")){
-			Communication.sendMessage(replica.getReplicaList().get(1), "Test message to 1");
-		}
-		else if(cmd.equals("send2")){
-			Communication.sendMessage(replica.getReplicaList().get(2), "Test message to 2");
-		}
 	}
 
 	@Override
 	public void replicaActionPerformed(ReplicaEvent e) {
 		if (e.getType() == Type.RECEIVE){
-			textArea.append("Received message: "+e.getMessage()+"\n");
+//			textArea.append("Received message: "+e.getMessage()+"\n");
 		}
 		else if (e.getType() == Type.BALANCE){
 			setStatus("");
