@@ -1,6 +1,8 @@
-package bankaccount;
+package bankaccount.messages;
 
 import java.io.Serializable;
+
+import bankaccount.NodeLocationData;
 
 public abstract class Message implements Serializable{
 	protected NodeLocationData sender;

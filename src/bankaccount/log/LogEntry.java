@@ -1,5 +1,6 @@
-package bankaccount;
+package bankaccount.log;
 
+import bankaccount.ReplicaEvent;
 import bankaccount.ReplicaEvent.Type;
 
 public class LogEntry {

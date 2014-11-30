@@ -1,4 +1,5 @@
-package bankaccount;
+package bankaccount.messages;
+
 
 public class NewLeaderNotificationMessage extends Message {
 	private int num;

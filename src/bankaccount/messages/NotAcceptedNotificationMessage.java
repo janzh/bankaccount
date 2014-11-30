@@ -1,4 +1,6 @@
-package bankaccount;
+package bankaccount.messages;
+
+import bankaccount.Proposal;
 
 public class NotAcceptedNotificationMessage extends Message{
 	private Proposal proposal;

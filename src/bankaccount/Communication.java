@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import bankaccount.messages.Message;
+
 public class Communication {
 	
 	public static void sendMessage(NodeLocationData receiverLocation, Message msg){

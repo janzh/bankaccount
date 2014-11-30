@@ -1,4 +1,5 @@
-package bankaccount;
+package bankaccount.messages;
+
 
 public class HeartbeatMessage extends Message {
 }

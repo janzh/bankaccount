@@ -1,4 +1,6 @@
-package bankaccount;
+package bankaccount.messages;
+
+import bankaccount.Proposal;
 
 public class ProposeToLeaderMessage extends Message {
 	private Proposal proposal;

@@ -7,15 +7,21 @@ import java.util.Random;
 
 import bankaccount.ReplicaEvent.Status;
 import bankaccount.ReplicaEvent.Type;
+import bankaccount.log.Log;
+import bankaccount.log.LogEntry;
+import bankaccount.messages.AcceptNotificationMessage;
+import bankaccount.messages.DecideMessage;
+import bankaccount.messages.HeartbeatMessage;
+import bankaccount.messages.Message;
+import bankaccount.messages.NewLeaderNotificationMessage;
+import bankaccount.messages.NotAcceptedNotificationMessage;
+import bankaccount.messages.PrepareRequestMessage;
+import bankaccount.messages.PrepareResponseMessage;
+import bankaccount.messages.ProposeToLeaderMessage;
 
 public class Replica {
 	// TODO: Testing variables for fail/unfail commands
-	private static final int heartbeatTimeout = 5000;
-	private static final int heartbeatDelayMin = 1000;
-	private static final int heartbeatDelayMax = 2000;
-	
 	private static final int nrOfReplicas = 3;
-	private static int decideMsgPeriod = 5000; // Ms of each period between broadcasting decideMsg to all
 	
 	private Account account;
 	private Log log;
@@ -50,8 +56,8 @@ public class Replica {
 	private Message message;
 	private ServerListener serverListener;
 	
-	private ReplicaHeartbeat heartbeat;
-	private Map<Integer, HeartbeatListener> heartbeatListeners;
+	private ReplicaHeartBeat heartbeat;
+	private Map<Integer, HeartbeatListener> heartBeatListeners;
 	
 	public Replica(String host, int port, int id){
 		this.id = id;
@@ -74,9 +80,9 @@ public class Replica {
 		serverListener = new ServerListener(this);
 		serverListener.start();
 		
-		heartbeat = new ReplicaHeartbeat();
+		heartbeat = new ReplicaHeartBeat(this);
 		heartbeat.start();
-		heartbeatListeners = new HashMap<Integer, HeartbeatListener>();
+		heartBeatListeners = new HashMap<Integer, HeartbeatListener>();
 		
 		for(int i = 0; i < nrOfReplicas; i++) {
 			String tempHost = "localhost";
@@ -86,9 +92,9 @@ public class Replica {
 			if(i == this.id) {
 				continue;
 			}
-			HeartbeatListener x = new HeartbeatListener(temp);
+			HeartbeatListener x = new HeartbeatListener(this, temp);
 			x.start();
-			heartbeatListeners.put(i, x);
+			heartBeatListeners.put(i, x);
 		}
 		
 		learnedProposals = new ArrayList<Proposal>();
@@ -142,7 +148,6 @@ public class Replica {
 	}
 	public void fail(){
 		this.isAlive = false;
-		this.heartbeat.kill();
 		fireActionPerformed(Type.FAIL, Status.SUCCESS);
 		System.out.println("---------------------------------------");
 		System.out.println(this.id + ": HAS FAILED-----------------");
@@ -150,7 +155,6 @@ public class Replica {
 
 	public void unfail(){
 		this.isAlive = true;
-		this.heartbeat.wakeUp();
 		fireActionPerformed(Type.UNFAIL, Status.SUCCESS);
 		System.out.println("---------------------------------------");
 		System.out.println(this.id + ": IS UNFAILED-----------------");
@@ -198,7 +202,7 @@ public class Replica {
 		}
 		else if(m instanceof HeartbeatMessage) {
 //			System.out.println(this.id + ": HeartbeatMessage received at replica from: " + m.getSender().getNum());
-			heartbeatListeners.get(m.getSender().getNum()).resetTimeout();
+			heartBeatListeners.get(m.getSender().getNum()).resetTimeout();
 		}
 		else if(m instanceof ProposeToLeaderMessage) {
 			// TODO: Should not run phase 1 when leader has not changed, so proposeToLeaderMessage should else go to Phase2
@@ -317,7 +321,7 @@ public class Replica {
 					// Decide value
 					DecideMessage decideMsg = new DecideMessage(acceptNot.getProposal());
 					decideMsg.setSender(this.locationData);
-					Thread periodicThread = new PeriodicBroadcast(decideMsg);
+					Thread periodicThread = new PeriodicBroadcast(this, decideMsg);
 				    periodicThread.start();
 				}
 				else {return;}
@@ -409,7 +413,7 @@ public class Replica {
 		if(!isAlive) {return;}
 		Communication.sendMessage(nodeLocationData, m);
 	}
-	private void broadcast(Message m) {
+	void broadcast(Message m) {
 		if(!isAlive) {return;}
 		
 		m.setSender(this.locationData);
@@ -502,7 +506,7 @@ public class Replica {
 	}
 	
 	// Elect a new leader
-	private void electNewLeader() {
+	void electNewLeader() {
 		// TODO Auto-generated method stub
 		System.out.println("NEW LEADER WAS ELECTED///----------------");
 		if(!isAlive)
@@ -522,90 +526,4 @@ public class Replica {
 		broadcast(newLeaderNot);
 	}
 	
-	// Periodically sends (DecideMessage) to all replicas each
-	public class PeriodicBroadcast extends Thread{
-		private DecideMessage decideMsg;
-		
-		public PeriodicBroadcast(DecideMessage decideMsg) {
-			this.decideMsg = decideMsg; 
-		}
-		@Override
-	    public void run()
-	    {
-	        while(true) {
-	           broadcast(decideMsg);
-	           try {
-				Thread.sleep(Replica.decideMsgPeriod);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	        }
-	    }
-	}
-	
-	public class ReplicaHeartbeat extends Thread {
-		private boolean isAlive;
-		private long lastHeartbeat;
-		private Random rand;
-		
-		public ReplicaHeartbeat() {
-			isAlive = true;
-			lastHeartbeat = System.currentTimeMillis();
-			rand = new Random();
-		}
-
-		public void run() {
-			int heartbeatDelay = rand.nextInt(heartbeatDelayMax - heartbeatDelayMin) + heartbeatDelayMin;
-			while(isAlive) {
-				if(heartbeatDelay < System.currentTimeMillis() - lastHeartbeat) {
-					HeartbeatMessage heartbeatMessage = new HeartbeatMessage();
-					broadcast(heartbeatMessage);
-					lastHeartbeat = System.currentTimeMillis();
-					heartbeatDelay = rand.nextInt(heartbeatDelayMax - heartbeatDelayMin) + heartbeatDelayMin;
-				}
-				yield(); // so the while loop doesn't spin too much
-			}
-		}
-		public void kill() {
-			isAlive = false;
-		}
-		
-		public void wakeUp() {
-			isAlive = true;
-		}
-	}
-
-	public class HeartbeatListener extends Thread {
-		private boolean isAlive;
-		private long lastHeartbeat;
-		private NodeLocationData locationData;
-		
-		public HeartbeatListener(NodeLocationData locationData) {
-			this.isAlive = true;
-			this.lastHeartbeat = System.currentTimeMillis();
-			this.locationData = locationData;
-		}
-		
-		public void resetTimeout() {
-			lastHeartbeat = System.currentTimeMillis();
-		}
-
-		public void run() {
-			while(isAlive) {
-				if(heartbeatTimeout < System.currentTimeMillis() - lastHeartbeat){
-					// if was leader, elect a new one
-					if(locationData.isLeader())
-						electNewLeader();
-
-					lastHeartbeat = System.currentTimeMillis();
-				}
-				yield(); // so the while loop doesn't spin too much
-			}
-		}
-		
-		public void kill(){
-			isAlive = false;
-		}
-	}
 }

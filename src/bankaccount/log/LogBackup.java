@@ -1,4 +1,4 @@
-package bankaccount;
+package bankaccount.log;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

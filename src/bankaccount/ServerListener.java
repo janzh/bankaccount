@@ -5,6 +5,8 @@ import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import bankaccount.messages.Message;
+
 public class ServerListener extends Thread
 {
 	private boolean isRunning;
