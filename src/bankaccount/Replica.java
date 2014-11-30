@@ -3,24 +3,14 @@ package bankaccount;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import bankaccount.ReplicaEvent.Status;
 import bankaccount.ReplicaEvent.Type;
 import bankaccount.log.Log;
 import bankaccount.log.LogEntry;
-import bankaccount.messages.AcceptNotificationMessage;
-import bankaccount.messages.DecideMessage;
-import bankaccount.messages.HeartbeatMessage;
-import bankaccount.messages.Message;
-import bankaccount.messages.NewLeaderNotificationMessage;
-import bankaccount.messages.NotAcceptedNotificationMessage;
-import bankaccount.messages.PrepareRequestMessage;
-import bankaccount.messages.PrepareResponseMessage;
-import bankaccount.messages.ProposeToLeaderMessage;
+import bankaccount.messages.*;
 
 public class Replica {
-	// TODO: Testing variables for fail/unfail commands
 	private static final int nrOfReplicas = 3;
 	
 	private Account account;
@@ -42,6 +32,9 @@ public class Replica {
 	private ArrayList<Proposal> myProposals; // list of proposals made by this replica
 	private ArrayList<Proposal> receivedProposals; // list of proposals received as leader
 	
+	// Leader proposer variable
+	private ArrayList<RespondNewLeaderMessage> respondElectionList;
+	
 	// Phase1 list of received prepare responses
 	private ArrayList<PrepareResponseMessage> prepResponseList;
 	// Phase2 list of received accepted notifications
@@ -50,14 +43,13 @@ public class Replica {
 	// Learner variables
 	private ArrayList<Proposal> learnedProposals;
 	
-	private ArrayList<Replica> replicas;
 	private ArrayList<NodeLocationData> locationDataList;
 	private NodeLocationData locationData;
 	private Message message;
 	private ServerListener serverListener;
 	
 	private ReplicaHeartBeat heartbeat;
-	private Map<Integer, HeartbeatListener> heartBeatListeners;
+	private Map<Integer, HeartbeatListener> heartbeatListeners;
 	
 	public Replica(String host, int port, int id){
 		this.id = id;
@@ -70,32 +62,15 @@ public class Replica {
 		log = new Log(id);
 		account.performOperations(log);
 		
-		replicas = new ArrayList<Replica>();
-		locationDataList = new ArrayList<NodeLocationData>();
-		
 		isAlive = true;
 		hasMajorityBallot = false;
 		
 		locationData = new NodeLocationData(host, port, id);
 		serverListener = new ServerListener(this);
 		serverListener.start();
-		
-		heartbeat = new ReplicaHeartBeat(this);
-		heartbeat.start();
-		heartBeatListeners = new HashMap<Integer, HeartbeatListener>();
-		
-		for(int i = 0; i < nrOfReplicas; i++) {
-			String tempHost = "localhost";
-			int tempPort = 8001+i;
-			NodeLocationData temp = new NodeLocationData(tempHost, tempPort, i);
-			locationDataList.add(temp);
-			if(i == this.id) {
-				continue;
-			}
-			HeartbeatListener x = new HeartbeatListener(this, temp);
-			x.start();
-			heartBeatListeners.put(i, x);
-		}
+
+		startThreads();
+
 		
 		learnedProposals = new ArrayList<Proposal>();
 		notAcceptedProposals = new ArrayList<Proposal>();
@@ -103,6 +78,30 @@ public class Replica {
 		receivedProposals = new ArrayList<Proposal>();
 		prepResponseList = new ArrayList<PrepareResponseMessage>();
 		acceptNotificationList = new ArrayList<AcceptNotificationMessage>();
+		respondElectionList = new ArrayList<RespondNewLeaderMessage>();
+		
+		updateLeader(0);
+	}
+	
+	private void startThreads() {
+		heartbeat = new ReplicaHeartBeat(this);
+		heartbeat.start();
+		heartbeatListeners = new HashMap<Integer, HeartbeatListener>();
+		locationDataList = new ArrayList<NodeLocationData>();
+		
+		for(int i = 0; i < nrOfReplicas; i++) {
+			String tempHost = "localhost";
+			int tempPort = 8001+i;
+			NodeLocationData temp = new NodeLocationData(tempHost, tempPort, i);
+			
+			locationDataList.add(temp);
+			if(i == this.id) {
+				continue;
+			}
+			HeartbeatListener x = new HeartbeatListener(this, temp);
+			x.start();
+			heartbeatListeners.put(i, x);
+		}
 	}
 
 	public void setListener(ReplicaListener listener){
@@ -111,12 +110,7 @@ public class Replica {
 	public NodeLocationData getLocationData(){
 		return locationData;
 	}
-	public void setReplicaList(ArrayList<Replica> replicas){
-		this.replicas = replicas;
-	}
-	public ArrayList<Replica> getReplicaList(){
-		return replicas;
-	}
+
 	public int getId(){
 		return id;
 	}
@@ -132,7 +126,7 @@ public class Replica {
 		myProposals.add(proposal);
 		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);
 		proposeMsg.setSender(this.locationData);
-		unicast(getCurrentLeader().getLocationData(), proposeMsg);
+		unicast(getCurrentLeader(), proposeMsg);
 		
 	}
 	public void withdraw(double value){
@@ -140,7 +134,7 @@ public class Replica {
 		myProposals.add(proposal);
 		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);
 		proposeMsg.setSender(this.locationData);
-		unicast(getCurrentLeader().getLocationData(), proposeMsg);
+		unicast(getCurrentLeader(), proposeMsg);
 
 	}
 	public void balance(){
@@ -153,13 +147,16 @@ public class Replica {
 		System.out.println(this.id + ": HAS FAILED-----------------");
 	}
 
-	public void unfail(){
+	public void unfail(){;
 		this.isAlive = true;
+		requestNewLeaderId();
+		startThreads();
+		System.out.println(this.heartbeatListeners.get(1));
 		fireActionPerformed(Type.UNFAIL, Status.SUCCESS);
 		System.out.println("---------------------------------------");
 		System.out.println(this.id + ": IS UNFAILED-----------------");
 	}
-	
+
 	private void fireActionPerformed(Type type, Status status){
 		if (listener != null) listener.replicaActionPerformed(new ReplicaEvent(type, status, account.getBalance()));
 	}
@@ -178,15 +175,12 @@ public class Replica {
 	 */
 	public void updateLeader(int num) {
 		// Update list of replicas accordingly
-		for (int i = 0; i < replicas.size(); i++) {
-			Replica tempReplica = replicas.get(i);
+		for (int i = 0; i < nrOfReplicas; i++) {
 			NodeLocationData tempLocationData = locationDataList.get(i);
 			if(i != num) {
-				tempReplica.getLocationData().becomeNonLeader();
 				tempLocationData.becomeNonLeader();
 			}
 			else {
-				tempReplica.getLocationData().becomeLeader();
 				tempLocationData.becomeLeader();
 			}
 		}
@@ -202,7 +196,7 @@ public class Replica {
 		}
 		else if(m instanceof HeartbeatMessage) {
 //			System.out.println(this.id + ": HeartbeatMessage received at replica from: " + m.getSender().getNum());
-			heartBeatListeners.get(m.getSender().getNum()).resetTimeout();
+			heartbeatListeners.get(m.getSender().getNum()).resetTimeout();
 		}
 		else if(m instanceof ProposeToLeaderMessage) {
 			// TODO: Should not run phase 1 when leader has not changed, so proposeToLeaderMessage should else go to Phase2
@@ -255,7 +249,7 @@ public class Replica {
 			prepResponseList.add(prepareResponse);
 			
 			// Check if response has come from a majority
-			if(prepResponseList.size() == ((replicas.size() / 2) + 1)) {
+			if(prepResponseList.size() == ((nrOfReplicas / 2) + 1)) {
 				hasMajorityBallot = true;
 				
 				double highestVal = 0;
@@ -308,7 +302,7 @@ public class Replica {
 					NotAcceptedNotificationMessage notAcceptedNot = new NotAcceptedNotificationMessage(acceptNot.getProposal());
 					notAcceptedNot.setSender(this.locationData);
 					int proposerId = acceptNot.getProposal().getProposerId();
-					NodeLocationData proposerData = replicas.get(proposerId).getLocationData();
+					NodeLocationData proposerData = locationDataList.get(proposerId);
 					unicast(proposerData, notAcceptedNot);
 				}
 			}
@@ -329,7 +323,7 @@ public class Replica {
 		}
 		
 		else if(m instanceof DecideMessage){
-			System.out.println(this.id + ": DecideMessage received at replica");
+//			System.out.println(this.id + ": DecideMessage received at replica");
 			DecideMessage decideMsg = (DecideMessage)m;
 			Proposal proposal = decideMsg.getProposal();
 			// Only learn value if it has not already
@@ -351,7 +345,6 @@ public class Replica {
 					account.withdraw(proposal.getValue());
 					if(proposal.getProposerId() == this.id) {
 						fireActionPerformed(Type.DEPOSIT, Status.FAIL);
-						// TODO: Must handle
 					}
 				}
 				// Perform transaction deposit
@@ -359,12 +352,46 @@ public class Replica {
 					account.deposit(proposal.getValue());
 					if(proposal.getProposerId() == this.id) {
 						fireActionPerformed(Type.WITHDRAW, Status.FAIL);
+						// TODO: Must handle
 					}
 				}
 			}
 		}
+		else if(m instanceof ProposeNewLeaderMessage) {
+			System.out.println(this.id + ": ProposeNewLeaderMessage received at replica from replica: " + m.getSender().getNum());
+			
+			ProposeNewLeaderMessage proposeMsg = (ProposeNewLeaderMessage)m;
+			// If the Id of the possible new leader is lower than this' Id it is accepted
+			RespondNewLeaderMessage respondMsg;
+			if(proposeMsg.getNum() <= this.id) {
+				respondMsg = new RespondNewLeaderMessage(proposeMsg.getNum(), true);
+			}
+			// If it is higher, the proposal of leader is not accepted
+			else if(proposeMsg.getNum() > this.id) {
+				respondMsg = new RespondNewLeaderMessage(proposeMsg.getNum(), false);
+			}
+			else{return;}
+			respondMsg.setSender(this.getLocationData());
+			unicast(proposeMsg.getSender(), respondMsg);
+		}
+		
+		else if(m instanceof RespondNewLeaderMessage) {
+			System.out.println(this.id + ": RespondNewLeaderMessage received at replica");
+			
+			RespondNewLeaderMessage respondMsg = (RespondNewLeaderMessage)m;
+			if(respondMsg.isAccepted()) {
+				respondElectionList.add(respondMsg);
+			}
+			if(respondElectionList.size() == (nrOfReplicas - 1)) {
+				System.out.println(this.id + ": has been elected as new LEADER!");
+				NewLeaderNotificationMessage newLeaderNot = new NewLeaderNotificationMessage(respondMsg.getNum());
+				newLeaderNot.setSender(this.getLocationData());
+				broadcast(newLeaderNot);
+			}
+		}
 		// New leader has been elected
 		else if(m instanceof NewLeaderNotificationMessage) {
+			System.out.println(this.id + ": RespondNewLeaderMessage received at replica");
 			NewLeaderNotificationMessage newLeaderNotification = (NewLeaderNotificationMessage)m;
 			int newLeaderNum = newLeaderNotification.getNum();
 			
@@ -372,6 +399,20 @@ public class Replica {
 				locationData.becomeLeader();
 			}
 			updateLeader(newLeaderNum);
+		}
+		else if(m instanceof RequestLeaderInfoMessage) {
+			int currentLeaderId = getCurrentLeader().getNum();
+			RespondLeaderInfoMessage leaderInfoMsg = new RespondLeaderInfoMessage(currentLeaderId);
+			leaderInfoMsg.setSender(this.locationData);
+			unicast(m.getSender(), leaderInfoMsg);
+		}
+		else if(m instanceof RespondLeaderInfoMessage) {
+			RespondLeaderInfoMessage leaderInfoMsg = (RespondLeaderInfoMessage)m;
+			int newLeaderId = leaderInfoMsg.getNum();
+			if(locationData.getNum() == newLeaderId) {
+				locationData.becomeLeader();
+			}
+			updateLeader(newLeaderId);
 		}
 		else {return;}
 	}
@@ -418,18 +459,18 @@ public class Replica {
 		
 		m.setSender(this.locationData);
 		
-		for(Replica replica : replicas)
+		for(NodeLocationData locationData : locationDataList)
 		{
-			if(this.locationData.isEqualTo(replica.getLocationData()) && m instanceof HeartbeatMessage) {
+			if(this.locationData.isEqualTo(locationData) && m instanceof HeartbeatMessage) {
 				continue;
 			}
 			// immediately deliver to self, but not if DecideMessage, because value has already been decide locally
-			else if(this.locationData.isEqualTo(replica.getLocationData())) {
+			else if(this.locationData.isEqualTo(locationData)) {
 				deliver(m);
 			}
 			// send message
 			else {
-				unicast(replica.getLocationData(), m);
+				unicast(locationData, m);
 			}
 		}
 	}
@@ -456,7 +497,7 @@ public class Replica {
 				counter++;
 			}
 		}
-		if (counter == ((replicas.size() / 2)) + 1) {
+		if (counter == ((nrOfReplicas / 2)) + 1) {
 			return true;
 		}
 		else {return false;}
@@ -470,21 +511,29 @@ public class Replica {
 				counter++;
 			}
 		}
-		if (counter == ((replicas.size() / 2)) + 1) {
+		if (counter == ((nrOfReplicas / 2)) + 1) {
 			return true;
 		}
 		else {return false;}
 	}
 	
-	private Replica getCurrentLeader(){
-		for (int i = 0; i < replicas.size(); i++) {
-			Replica tempReplica = replicas.get(i);
-			if(tempReplica.locationData.isLeader()) {
-				return tempReplica;
+	private NodeLocationData getCurrentLeader(){
+		for (int i = 0; i < nrOfReplicas; i++) {
+			NodeLocationData tempLocationData = locationDataList.get(i);
+			if(tempLocationData.isLeader()) {
+				return tempLocationData;
 			}
 		}
 		return null;
 	}
+	
+	// Contacts other replicas to find out who is current leader
+	private void requestNewLeaderId() {
+		RequestLeaderInfoMessage leaderInfoMsg = new RequestLeaderInfoMessage();
+		leaderInfoMsg.setSender(this.locationData);
+		broadcast(leaderInfoMsg);
+	}
+	
 	// Check to see if acceptor has already accepted this proposal
 	private boolean receivedAcceptNot(AcceptNotificationMessage acceptNot) {
 		for(int i = 0; i < acceptNotificationList.size(); i++){
@@ -507,23 +556,23 @@ public class Replica {
 	
 	// Elect a new leader
 	void electNewLeader() {
-		// TODO Auto-generated method stub
-		System.out.println("NEW LEADER WAS ELECTED///----------------");
 		if(!isAlive)
 			return;
-		int newNum = -1;
-		
-		// find old leader and calculate new leader number
-		for(Replica replica: replicas) {
-			NodeLocationData locationData = replica.getLocationData();
-			if(locationData.isLeader()) {
-				newNum = (locationData.getNum() + 1) % replicas.size();
-				break;
-			}
+		// If this is the replica with lowest id, it immediately elect itself
+		if(this.id == 0) {
+			System.out.println(this.id + ": has been elected as new LEADER!");
+			NewLeaderNotificationMessage newLeaderNot = new NewLeaderNotificationMessage(this.id);
+			newLeaderNot.setSender(this.getLocationData());
+			broadcast(newLeaderNot);
 		}
-		NewLeaderNotificationMessage newLeaderNot = new NewLeaderNotificationMessage(newNum);
-		newLeaderNot.setSender(this.getLocationData());
-		broadcast(newLeaderNot);
+		// Otherwise propose to all nodes that this Replica should be new leader
+		else {
+			// Clear previous list of responses to a new election
+			respondElectionList.clear();
+			ProposeNewLeaderMessage newLeaderProposal = new ProposeNewLeaderMessage(this.id);
+			newLeaderProposal.setSender(this.getLocationData());
+			broadcast(newLeaderProposal);
+		}
 	}
 	
 }

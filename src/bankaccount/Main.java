@@ -9,14 +9,9 @@ public class Main {
 		ArrayList<Replica> replicas = new ArrayList<Replica>();
 		for (int i=0; i<3; i++){
 			Replica r = new Replica("localhost", 8001+i, i);
-			r.setReplicaList(replicas);
-			replicas.add(r);
 			CLI2 cli = new CLI2(r);
 			r.setListener(cli);
 		}
-		replicas.get(0).updateLeader(0);
-		replicas.get(1).updateLeader(0);
-		replicas.get(2).updateLeader(0);
 		
 		
 //		for (int i=0; i<2; i++){
