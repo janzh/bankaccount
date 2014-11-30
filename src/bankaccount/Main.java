@@ -15,6 +15,9 @@ public class Main {
 			r.setListener(cli);
 		}
 		replicas.get(0).updateLeader(0);
+		replicas.get(1).updateLeader(0);
+		replicas.get(2).updateLeader(0);
+		
 		
 //		for (int i=0; i<2; i++){
 //			Replica r = new Replica("192.168.0.15", 8001+i, i);

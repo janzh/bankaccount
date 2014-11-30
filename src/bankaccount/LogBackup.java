@@ -65,7 +65,7 @@ public class LogBackup {
 	}
 	
 	public void appendEntry(LogEntry entry){
-		appendEntry(parseLogEntry(entry));
+		appendEntry(parseLogEntry(entry) + separator);
 	}
 	
 	private String parseLogEntry(LogEntry entry){

@@ -141,13 +141,19 @@ public class Replica {
 		fireActionPerformed(Type.BALANCE, Status.SUCCESS);
 	}
 	public void fail(){
-		isAlive = false;
+		this.isAlive = false;
+		this.heartbeat.kill();
 		fireActionPerformed(Type.FAIL, Status.SUCCESS);
+		System.out.println("---------------------------------------");
+		System.out.println(this.id + ": HAS FAILED-----------------");
 	}
 
 	public void unfail(){
-		isAlive = true;
+		this.isAlive = true;
+		this.heartbeat.wakeUp();
 		fireActionPerformed(Type.UNFAIL, Status.SUCCESS);
+		System.out.println("---------------------------------------");
+		System.out.println(this.id + ": IS UNFAILED-----------------");
 	}
 	
 	private void fireActionPerformed(Type type, Status status){
@@ -191,7 +197,7 @@ public class Replica {
 			return;
 		}
 		else if(m instanceof HeartbeatMessage) {
-//			System.out.println(this.id + ": HeartbeatMessage received at replica");
+//			System.out.println(this.id + ": HeartbeatMessage received at replica from: " + m.getSender().getNum());
 			heartbeatListeners.get(m.getSender().getNum()).resetTimeout();
 		}
 		else if(m instanceof ProposeToLeaderMessage) {
@@ -548,7 +554,7 @@ public class Replica {
 			lastHeartbeat = System.currentTimeMillis();
 			rand = new Random();
 		}
-		
+
 		public void run() {
 			int heartbeatDelay = rand.nextInt(heartbeatDelayMax - heartbeatDelayMin) + heartbeatDelayMin;
 			while(isAlive) {
@@ -563,6 +569,10 @@ public class Replica {
 		}
 		public void kill() {
 			isAlive = false;
+		}
+		
+		public void wakeUp() {
+			isAlive = true;
 		}
 	}
 
@@ -597,6 +607,5 @@ public class Replica {
 		public void kill(){
 			isAlive = false;
 		}
-
 	}
 }
