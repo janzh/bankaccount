@@ -1,5 +1,7 @@
 package bankaccount;
 
+import bankaccount.ReplicaEvent.Type;
+
 public class Account {
 	double balance;
 
@@ -17,6 +19,19 @@ public class Account {
 	}
 	public void deposit(double deposit) {
 		this.balance += deposit;
+	}
+	
+	public void performOperations(Log log){
+		int n = log.size();
+		for (int i=0; i<n; i++){
+			LogEntry entry = log.getEntry(i);
+			if (entry.getOperation() == Type.DEPOSIT){
+				deposit(entry.getValue());
+			}
+			else if (entry.getOperation() == Type.WITHDRAW){
+				withdraw(entry.getValue());
+			}
+		}
 	}
 	
 }
