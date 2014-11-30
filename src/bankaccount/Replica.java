@@ -1,11 +1,20 @@
 package bankaccount;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 import bankaccount.ReplicaEvent.Status;
 import bankaccount.ReplicaEvent.Type;
 
 public class Replica {
+	// TODO: Testing variables for fail/unfail commands
+	private static final int heartbeatTimeout = 10000;
+	private static final int heartbeatDelayMin = 2000;
+	private static final int heartbeatDelayMax = 10000;
+	
+	private static final int nrOfReplicas = 3;
 	private static int decideMsgPeriod = 5000; // Ms of each period between broadcasting decideMsg to all
 	
 	private Account account;
@@ -40,6 +49,9 @@ public class Replica {
 	private Message message;
 	private ServerListener serverListener;
 	
+	private ReplicaHeartbeat heartbeat;
+	private Map<Integer, HeartbeatListener> heartbeatListeners;
+	
 	public Replica(String host, int port, int id){
 		this.id = id;
 		this.ballotNum = new Pair(id);
@@ -48,7 +60,7 @@ public class Replica {
 
 		account = new Account();
 		log = new Log();
-		replicas = new ArrayList<>();
+		replicas = new ArrayList<Replica>();
 		isAlive = true;
 		hasMajorityBallot = false;
 		
@@ -56,12 +68,25 @@ public class Replica {
 		serverListener = new ServerListener(this);
 		serverListener.start();
 		
+		heartbeat = new ReplicaHeartbeat();
+		heartbeat.start();
+		heartbeatListeners = new HashMap<Integer, HeartbeatListener>();
+		
+		for(int i = 0; i < nrOfReplicas; i++) {
+			if(i == this.id) {
+				continue;
+			}
+			HeartbeatListener x = new HeartbeatListener();
+			x.start();
+			heartbeatListeners.put(i, x);
+		}
+		
+		learnedProposals = new ArrayList<Proposal>();
 		notAcceptedProposals = new ArrayList<Proposal>();
 		myProposals = new ArrayList<Proposal>();
 		receivedProposals = new ArrayList<Proposal>();
 		prepResponseList = new ArrayList<PrepareResponseMessage>();
 		acceptNotificationList = new ArrayList<AcceptNotificationMessage>();
-		learnedProposals = new ArrayList<Proposal>();
 	}
 
 	public void setListener(ReplicaListener listener){
@@ -109,6 +134,7 @@ public class Replica {
 		isAlive = false;
 		fireActionPerformed(Type.FAIL, Status.SUCCESS);
 	}
+
 	public void unfail(){
 		isAlive = true;
 		fireActionPerformed(Type.UNFAIL, Status.SUCCESS);
@@ -130,11 +156,10 @@ public class Replica {
 	 * Set itself to leader, an updates so that list of other replicas are not leader
 	 * Start phase1 of Paxos algorithm
 	 */
-	public void becomeLeader() {
-		// Makes itself leader, and update list of replicas accordingly
-		locationData.becomeLeader();
+	public void updateLeader(int num) {
+		// Update list of replicas accordingly
 		for (Replica replica : replicas) {
-			if(!replica.equals(this)) {
+			if(!replica.getLocationData().isEqualTo(this.getLocationData())) {
 				replica.getLocationData().becomeNonLeader();
 			}
 			else {replica.getLocationData().becomeLeader();}
@@ -148,6 +173,10 @@ public class Replica {
 	private synchronized void deliver(Message m) {
 		if(!isAlive) {
 			return;
+		}
+		else if(m instanceof HeartbeatMessage) {
+			System.out.println(this.id + ": HeartbeatMessage received at replica");
+			heartbeatListeners.get(m.getSender().getNum()).resetTimeout();
 		}
 		else if(m instanceof ProposeToLeaderMessage) {
 			// TODO: Should not run phase 1 when leader has not changed, so proposeToLeaderMessage should else go to Phase2
@@ -307,12 +336,21 @@ public class Replica {
 					}
 				}
 			}
-			else {return;}
-			
 		}
+		// New leader has been elected
+		else if(m instanceof NewLeaderNotificationMessage) {
+			NewLeaderNotificationMessage newLeaderNotification = (NewLeaderNotificationMessage)m;
+			int newLeaderNum = newLeaderNotification.getNum();
+			
+			if(locationData.getNum() == newLeaderNum) {
+				locationData.becomeLeader();
+			}
+			updateLeader(newLeaderNum);
+		}
+		else {return;}
 	}
 	/*
-	 * Decide should update local log, replica and status of transaction in CLI
+	 * decide should update local log, replica and status of transaction in CLI
 	 * @Param value - value that Paxos Algorithm decided
 	 */
 	private void decide(Proposal proposal) {
@@ -348,10 +386,15 @@ public class Replica {
 	private void broadcast(Message m) {
 		if(!isAlive) {return;}
 		
+		m.setSender(this.locationData);
+		
 		for(Replica replica : replicas)
 		{
+			if(this.locationData.isEqualTo(replica.getLocationData()) && m instanceof HeartbeatMessage) {
+				continue;
+			}
 			// immediately deliver to self, but not if DecideMessage, because value has already been decide locally
-			if(this.locationData.equals(replica.getLocationData())) {
+			else if(this.locationData.isEqualTo(replica.getLocationData())) {
 				deliver(m);
 			}
 			// send message
@@ -432,6 +475,26 @@ public class Replica {
 		return false;
 	}
 	
+	// Elect a new leader
+	private void electNewLeader() {
+		// TODO Auto-generated method stub
+		if(!isAlive)
+			return;
+		int newNum = -1;
+		
+		// find old leader and calculate new leader num
+		for(Replica replica: replicas) {
+			NodeLocationData locationData = replica.getLocationData();
+			if(locationData.isLeader()) {
+				newNum = (locationData.getNum() + 1) % replicas.size();
+				break;
+			}
+		}
+		NewLeaderNotificationMessage newLeaderNot = new NewLeaderNotificationMessage(newNum);
+		newLeaderNot.setSender(this.getLocationData());
+		broadcast(newLeaderNot);
+	}
+	
 	// Periodically sends (DecideMessage) to all replicas each
 	public class PeriodicBroadcast extends Thread{
 		private DecideMessage decideMsg;
@@ -452,5 +515,65 @@ public class Replica {
 			}
 	        }
 	    }
+	}
+	
+	public class ReplicaHeartbeat extends Thread {
+		private boolean isAlive;
+		private long lastHeartbeat;
+		private Random rand;
+		
+		public ReplicaHeartbeat() {
+			isAlive = true;
+			lastHeartbeat = System.currentTimeMillis();
+			rand = new Random();
+		}
+		
+		public void run() {
+			int heartbeatDelay = rand.nextInt(heartbeatDelayMax - heartbeatDelayMin) + heartbeatDelayMin;
+			while(isAlive) {
+				if(heartbeatDelay < System.currentTimeMillis() - lastHeartbeat) {
+					HeartbeatMessage heartbeatMessage = new HeartbeatMessage();
+					broadcast(heartbeatMessage);
+					lastHeartbeat = System.currentTimeMillis();
+					heartbeatDelay = rand.nextInt(heartbeatDelayMax - heartbeatDelayMin) + heartbeatDelayMin;
+				}
+				yield(); // so the while loop doesn't spin too much
+			}
+		}
+		public void kill() {
+			isAlive = false;
+		}
+	}
+
+	public class HeartbeatListener extends Thread {
+		private boolean isAlive;
+		private long lastHeartbeat;
+		
+		public HeartbeatListener() {
+			this.isAlive = true;
+			this.lastHeartbeat = System.currentTimeMillis();
+		}
+		
+		public void resetTimeout() {
+			lastHeartbeat = System.currentTimeMillis();
+		}
+
+		public void run() {
+			while(isAlive) {
+				if(heartbeatTimeout < System.currentTimeMillis() - lastHeartbeat){
+					// if was leader, elect a new one
+					if(getLocationData().isLeader())
+						electNewLeader();
+
+					lastHeartbeat = System.currentTimeMillis();
+				}
+				yield(); // so the while loop doesn't spin too much
+			}
+		}
+		
+		public void kill(){
+			isAlive = false;
+		}
+
 	}
 }

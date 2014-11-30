@@ -98,8 +98,14 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		else if(cmd.equals("deposit")) {
 			replica.deposit(cmdValue);
 		}
-		else if(cmd.equals("withdraw")){
+		else if(cmd.equals("withdraw")) {
 			replica.withdraw(cmdValue);
+		}
+		else if(cmd.equals("fail")) {
+			replica.fail();
+		}
+		else if(cmd.equals("unfail")) {
+			replica.unfail();
 		}
 	}
 

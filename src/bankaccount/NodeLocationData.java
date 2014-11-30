@@ -52,4 +52,12 @@ public class NodeLocationData implements Serializable
 	{
 		return ((Integer)num).toString();
 	}
+	
+	public boolean isEqualTo(NodeLocationData locationData2){
+		if(this.host.equals(locationData2.getHost()) && this.port == locationData2.getPort() && this.num == locationData2.getNum()) {
+			return true;
+		}
+		else{return false;}
+			
+	}
 }
