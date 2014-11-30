@@ -59,8 +59,11 @@ public class Replica {
 		this.acceptVal = 0;
 
 		account = new Account();
-		log = new Log();
-		replicas = new ArrayList<Replica>();
+
+		log = new Log(id);
+		account.performOperations(log);
+		
+		replicas = new ArrayList<>();
 		isAlive = true;
 		hasMajorityBallot = false;
 		
@@ -357,20 +360,24 @@ public class Replica {
 		System.out.println(this.id + ": Value: " + proposal.getValue() + " has been learned");
 		System.out.println("------------------------------------------------------");
 		
-		log.putElement(Double.toString(proposal.getValue()));
+		double value = proposal.getValue();
 		// Perform transaction withdrawal
 		if(proposal.getType().equals("w")) {
-			account.withdraw(proposal.getValue());
+			account.withdraw(value);
+			log.addEntry(new LogEntry(Type.WITHDRAW, value));
+			
 			if(proposal.getProposerId() == this.id) {
-				fireActionPerformed(Type.DEPOSIT, Status.SUCCESS);
+				fireActionPerformed(Type.WITHDRAW, Status.SUCCESS);
 				// TODO: Must handle
 			}
 		}
 		// Perform transaction deposit
 		else if(proposal.getType().equals("d")) {
-			account.deposit(proposal.getValue());
+			account.deposit(value);
+			log.addEntry(new LogEntry(Type.DEPOSIT, value));
+
 			if(proposal.getProposerId() == this.id) {
-				fireActionPerformed(Type.WITHDRAW, Status.SUCCESS);
+				fireActionPerformed(Type.DEPOSIT, Status.SUCCESS);
 			}
 		}
 	}

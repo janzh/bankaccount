@@ -3,16 +3,25 @@ package bankaccount;
 import java.util.ArrayList;
 
 public class Log {
-	ArrayList<String> log;
 	
-	public Log() {
-		log = new ArrayList<String>();
+	private ArrayList<LogEntry> log;
+	private LogBackup logBackup;
+	
+	public Log(int id) {
+		logBackup = new LogBackup("backup"+id);
+		log = logBackup.read();
 	}
 	
-	public String getElement(int i){
+	public LogEntry getEntry(int i){
 		return log.get(i);
 	}
-	public void putElement(String s){
-		log.add(s);
+	
+	public void addEntry(LogEntry entry){
+		log.add(entry);
+		logBackup.appendEntry(entry);
+	}
+	
+	public int size(){
+		return log.size();
 	}
 }
