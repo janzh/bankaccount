@@ -10,9 +10,9 @@ import bankaccount.ReplicaEvent.Type;
 
 public class Replica {
 	// TODO: Testing variables for fail/unfail commands
-	private static final int heartbeatTimeout = 10000;
-	private static final int heartbeatDelayMin = 2000;
-	private static final int heartbeatDelayMax = 10000;
+	private static final int heartbeatTimeout = 5000;
+	private static final int heartbeatDelayMin = 1000;
+	private static final int heartbeatDelayMax = 2000;
 	
 	private static final int nrOfReplicas = 3;
 	private static int decideMsgPeriod = 5000; // Ms of each period between broadcasting decideMsg to all
@@ -45,6 +45,7 @@ public class Replica {
 	private ArrayList<Proposal> learnedProposals;
 	
 	private ArrayList<Replica> replicas;
+	private ArrayList<NodeLocationData> locationDataList;
 	private NodeLocationData locationData;
 	private Message message;
 	private ServerListener serverListener;
@@ -63,7 +64,9 @@ public class Replica {
 		log = new Log(id);
 		account.performOperations(log);
 		
-		replicas = new ArrayList<>();
+		replicas = new ArrayList<Replica>();
+		locationDataList = new ArrayList<NodeLocationData>();
+		
 		isAlive = true;
 		hasMajorityBallot = false;
 		
@@ -76,10 +79,14 @@ public class Replica {
 		heartbeatListeners = new HashMap<Integer, HeartbeatListener>();
 		
 		for(int i = 0; i < nrOfReplicas; i++) {
+			String tempHost = "localhost";
+			int tempPort = 8001+i;
+			NodeLocationData temp = new NodeLocationData(tempHost, tempPort, i);
+			locationDataList.add(temp);
 			if(i == this.id) {
 				continue;
 			}
-			HeartbeatListener x = new HeartbeatListener();
+			HeartbeatListener x = new HeartbeatListener(temp);
 			x.start();
 			heartbeatListeners.put(i, x);
 		}
@@ -161,11 +168,17 @@ public class Replica {
 	 */
 	public void updateLeader(int num) {
 		// Update list of replicas accordingly
-		for (Replica replica : replicas) {
-			if(!replica.getLocationData().isEqualTo(this.getLocationData())) {
-				replica.getLocationData().becomeNonLeader();
+		for (int i = 0; i < replicas.size(); i++) {
+			Replica tempReplica = replicas.get(i);
+			NodeLocationData tempLocationData = locationDataList.get(i);
+			if(i != num) {
+				tempReplica.getLocationData().becomeNonLeader();
+				tempLocationData.becomeNonLeader();
 			}
-			else {replica.getLocationData().becomeLeader();}
+			else {
+				tempReplica.getLocationData().becomeLeader();
+				tempLocationData.becomeLeader();
+			}
 		}
 		// Remove all responses and received proposals, since we are starting a new phase1
 		prepResponseList.clear();
@@ -178,7 +191,7 @@ public class Replica {
 			return;
 		}
 		else if(m instanceof HeartbeatMessage) {
-			System.out.println(this.id + ": HeartbeatMessage received at replica");
+//			System.out.println(this.id + ": HeartbeatMessage received at replica");
 			heartbeatListeners.get(m.getSender().getNum()).resetTimeout();
 		}
 		else if(m instanceof ProposeToLeaderMessage) {
@@ -485,11 +498,12 @@ public class Replica {
 	// Elect a new leader
 	private void electNewLeader() {
 		// TODO Auto-generated method stub
+		System.out.println("NEW LEADER WAS ELECTED///----------------");
 		if(!isAlive)
 			return;
 		int newNum = -1;
 		
-		// find old leader and calculate new leader num
+		// find old leader and calculate new leader number
 		for(Replica replica: replicas) {
 			NodeLocationData locationData = replica.getLocationData();
 			if(locationData.isLeader()) {
@@ -555,10 +569,12 @@ public class Replica {
 	public class HeartbeatListener extends Thread {
 		private boolean isAlive;
 		private long lastHeartbeat;
+		private NodeLocationData locationData;
 		
-		public HeartbeatListener() {
+		public HeartbeatListener(NodeLocationData locationData) {
 			this.isAlive = true;
 			this.lastHeartbeat = System.currentTimeMillis();
+			this.locationData = locationData;
 		}
 		
 		public void resetTimeout() {
@@ -569,7 +585,7 @@ public class Replica {
 			while(isAlive) {
 				if(heartbeatTimeout < System.currentTimeMillis() - lastHeartbeat){
 					// if was leader, elect a new one
-					if(getLocationData().isLeader())
+					if(locationData.isLeader())
 						electNewLeader();
 
 					lastHeartbeat = System.currentTimeMillis();
