@@ -11,7 +11,7 @@ import bankaccount.log.LogEntry;
 import bankaccount.messages.*;
 
 public class Replica {
-	private static final int nrOfReplicas = 3;
+	private static final int nrOfReplicas = 5;
 	
 	private Account account;
 	private Log log;
@@ -60,7 +60,7 @@ public class Replica {
 		account = new Account();
 
 		log = new Log(id);
-		account.performOperations(log);
+//		account.performOperations(log); //TODO: Uncomment when logBackup is fully implemented
 		
 		isAlive = true;
 		hasMajorityBallot = false;
@@ -174,6 +174,9 @@ public class Replica {
 	 * Start phase1 of Paxos algorithm
 	 */
 	public void updateLeader(int num) {
+		if(locationData.getNum() == num) {
+			locationData.becomeLeader();
+		}
 		// Update list of replicas accordingly
 		for (int i = 0; i < nrOfReplicas; i++) {
 			NodeLocationData tempLocationData = locationDataList.get(i);
@@ -313,7 +316,7 @@ public class Replica {
 				// Check if notification has come from a majority
 				if(receivedExtMajorityAcceptors(acceptNot) ) {
 					// Decide value
-					DecideMessage decideMsg = new DecideMessage(acceptNot.getProposal());
+					DecideMessage decideMsg = new DecideMessage(acceptNot.getProposal(), this.log.getLogList());
 					decideMsg.setSender(this.locationData);
 					Thread periodicThread = new PeriodicBroadcast(this, decideMsg);
 				    periodicThread.start();
@@ -328,8 +331,19 @@ public class Replica {
 			Proposal proposal = decideMsg.getProposal();
 			// Only learn value if it has not already
 			if(!receivedDecideMsg(decideMsg)) {
-				learnedProposals.add(proposal);
-				decide(proposal);
+				if(this.log.size() < decideMsg.getLog().size()) {
+					ArrayList<LogEntry> newEntries = getNewEntries(this.log.getLogList(), decideMsg.getLog());
+					for (LogEntry logEntry : newEntries) {
+						System.out.println(logEntry.getOperation() + " Op/Val "  + logEntry.getValue());
+						Proposal restoredProposal = logEntry.getProposal();
+						learnedProposals.add(restoredProposal);
+						decideNew(logEntry.getOperation(), logEntry.getValue(), restoredProposal);
+					}
+				}
+				else {
+					learnedProposals.add(proposal);
+					decide(proposal);
+				}
 			}
 		}
 		// Sends a fail message to CLI, if a majority has not accepted(rejected) the proposal 
@@ -382,7 +396,7 @@ public class Replica {
 			if(respondMsg.isAccepted()) {
 				respondElectionList.add(respondMsg);
 			}
-			if(respondElectionList.size() == (nrOfReplicas - 1)) {
+			if(respondElectionList.size() == ((nrOfReplicas/2) + 1)) {
 				System.out.println(this.id + ": has been elected as new LEADER!");
 				NewLeaderNotificationMessage newLeaderNot = new NewLeaderNotificationMessage(respondMsg.getNum());
 				newLeaderNot.setSender(this.getLocationData());
@@ -428,7 +442,7 @@ public class Replica {
 		// Perform transaction withdrawal
 		if(proposal.getType().equals("w")) {
 			account.withdraw(value);
-			log.addEntry(new LogEntry(Type.WITHDRAW, value));
+			log.addEntry(new LogEntry(Type.WITHDRAW, value, proposal));
 			
 			if(proposal.getProposerId() == this.id) {
 				fireActionPerformed(Type.WITHDRAW, Status.SUCCESS);
@@ -438,11 +452,26 @@ public class Replica {
 		// Perform transaction deposit
 		else if(proposal.getType().equals("d")) {
 			account.deposit(value);
-			log.addEntry(new LogEntry(Type.DEPOSIT, value));
+			log.addEntry(new LogEntry(Type.DEPOSIT, value, proposal));
 
 			if(proposal.getProposerId() == this.id) {
 				fireActionPerformed(Type.DEPOSIT, Status.SUCCESS);
 			}
+		}
+	}
+	private void decideNew(Type type, double value, Proposal proposal) {
+		System.out.println(this.id + ": Value: " + value + " has been learned that was missed during failure");
+		System.out.println("------------------------------------------------------");
+		
+		// Perform transaction withdrawal
+		if(type == Type.WITHDRAW) {
+			account.withdraw(value);
+			log.addEntry(new LogEntry(type, value, proposal));
+		}
+		// Perform transaction deposit
+		else if(type == Type.DEPOSIT) {
+			account.deposit(value);
+			log.addEntry(new LogEntry(type, value, proposal));
 		}
 	}
 	/* 
@@ -546,12 +575,25 @@ public class Replica {
 
 	// Check to see if learner has already learned/decided this value from proposal
 	private boolean receivedDecideMsg(DecideMessage msg){
+		System.out.println("---------------------------------");
+		System.out.println(msg.getProposal().getProposerId());
+		System.out.println(msg.getProposal().getProposalNum());
 		for(int i = 0; i < learnedProposals.size(); i++){
+			System.out.println(learnedProposals.get(i).getProposerId());
+			System.out.println(learnedProposals.get(i).getProposalNum());
 			if(learnedProposals.get(i).isEqual(msg.getProposal())) {
 				return true;
 			}
 		}
 		return false;
+	}
+	
+	private ArrayList<LogEntry> getNewEntries(ArrayList<LogEntry> oldList, ArrayList<LogEntry> newList) {
+		ArrayList<LogEntry> newEntries = new ArrayList<LogEntry>();
+		for(int i = oldList.size(); i < newList.size(); i++) {
+			newEntries.add(newList.get(i));
+		}
+		return newEntries;
 	}
 	
 	// Elect a new leader

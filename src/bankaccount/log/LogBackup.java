@@ -14,6 +14,7 @@ import bankaccount.ReplicaEvent.Type;
 public class LogBackup {
 	
 	private String fileName = "stableStorage/backup.csv";
+	private String fileLearnedName = "stableStorage/backup.csv";
 	private static final String separator = ",";
 
 	/*public static void main(String[] args) {
@@ -30,8 +31,9 @@ public class LogBackup {
 	
 	public LogBackup(){}
 	
-	public LogBackup(String fileName){
+	public LogBackup(String fileName, String learnedFileName){
 		this.fileName = "stableStorage/"+fileName+".csv";
+		this.fileLearnedName = "stableStorage/"+learnedFileName+".csv";
 	}
 
 	public ArrayList<LogEntry> read() { 
@@ -79,12 +81,12 @@ public class LogBackup {
 		String operation = substrings[0];
 		double value = Double.parseDouble(substrings[1].split("\\)")[0]);
 		if (operation.equals("d")){
-			return new LogEntry(Type.DEPOSIT, value);
+//			return new LogEntry(Type.DEPOSIT, value);
 		}
 		if (operation.equals("w")){
-			return new LogEntry(Type.WITHDRAW, value);
+//			return new LogEntry(Type.WITHDRAW, value);
 		}
-		else return null;
+		return null;
 	}
 
 	private void appendEntry(String entry){

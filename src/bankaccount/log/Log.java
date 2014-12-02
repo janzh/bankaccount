@@ -1,14 +1,15 @@
 package bankaccount.log;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Log {
+public class Log implements Serializable {
 	
 	private ArrayList<LogEntry> log;
 	private LogBackup logBackup;
 	
 	public Log(int id) {
-		logBackup = new LogBackup("backup"+id);
+		logBackup = new LogBackup("backup"+id, "learnedBackup"+id);
 		log = logBackup.read();
 	}
 	
@@ -23,5 +24,9 @@ public class Log {
 	
 	public int size(){
 		return log.size();
+	}
+	
+	public ArrayList<LogEntry> getLogList() {
+		return log;
 	}
 }

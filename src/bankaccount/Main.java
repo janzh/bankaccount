@@ -7,7 +7,7 @@ public class Main {
 	
 	public static void main(String[] args){
 		ArrayList<Replica> replicas = new ArrayList<Replica>();
-		for (int i=0; i<3; i++){
+		for (int i=0; i<5; i++){
 			Replica r = new Replica("localhost", 8001+i, i);
 			CLI2 cli = new CLI2(r);
 			r.setListener(cli);
