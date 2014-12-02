@@ -9,7 +9,7 @@ public class Log implements Serializable {
 	private LogBackup logBackup;
 	
 	public Log(int id) {
-		logBackup = new LogBackup("backup"+id, "learnedBackup"+id);
+		logBackup = new LogBackup("backup"+id);
 		log = logBackup.read();
 	}
 	

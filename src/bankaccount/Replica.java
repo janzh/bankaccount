@@ -60,7 +60,7 @@ public class Replica {
 		account = new Account();
 
 		log = new Log(id);
-//		account.performOperations(log); //TODO: Uncomment when logBackup is fully implemented
+		account.performOperations(log);
 		
 		isAlive = true;
 		hasMajorityBallot = false;
@@ -122,7 +122,7 @@ public class Replica {
 	}
 	
 	public void deposit(double value){
-		Proposal proposal = new Proposal(this.id, myProposals.size(), value, "d");
+		Proposal proposal = new Proposal(this.id, myProposals.size(), value, Type.DEPOSIT);
 		myProposals.add(proposal);
 		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);
 		proposeMsg.setSender(this.locationData);
@@ -130,7 +130,7 @@ public class Replica {
 		
 	}
 	public void withdraw(double value){
-		Proposal proposal = new Proposal(this.id, myProposals.size(), value, "w");
+		Proposal proposal = new Proposal(this.id, myProposals.size(), value, Type.WITHDRAW);
 		myProposals.add(proposal);
 		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);
 		proposeMsg.setSender(this.locationData);
@@ -149,8 +149,14 @@ public class Replica {
 
 	public void unfail(){;
 		this.isAlive = true;
+		
+		account = new Account();
+		log = new Log(id);
+		account.performOperations(log);
+		
 		requestNewLeaderId();
 		startThreads();
+		
 		System.out.println(this.heartbeatListeners.get(1));
 		fireActionPerformed(Type.UNFAIL, Status.SUCCESS);
 		System.out.println("---------------------------------------");
@@ -355,14 +361,14 @@ public class Replica {
 			
 			if(receivedExtMajorityNotAcceptors(notAcceptedNot) ) {
 				Proposal proposal = notAcceptedNot.getProposal();
-				if(proposal.getType().equals("w")) {
+				if(proposal.getOperation() == Type.DEPOSIT) {
 					account.withdraw(proposal.getValue());
 					if(proposal.getProposerId() == this.id) {
 						fireActionPerformed(Type.DEPOSIT, Status.FAIL);
 					}
 				}
 				// Perform transaction deposit
-				else if(proposal.getType().equals("d")) {
+				else if(proposal.getOperation() == Type.WITHDRAW) {
 					account.deposit(proposal.getValue());
 					if(proposal.getProposerId() == this.id) {
 						fireActionPerformed(Type.WITHDRAW, Status.FAIL);
@@ -440,7 +446,7 @@ public class Replica {
 		
 		double value = proposal.getValue();
 		// Perform transaction withdrawal
-		if(proposal.getType().equals("w")) {
+		if(proposal.getOperation() == Type.WITHDRAW) {
 			account.withdraw(value);
 			log.addEntry(new LogEntry(Type.WITHDRAW, value, proposal));
 			
@@ -450,7 +456,7 @@ public class Replica {
 			}
 		}
 		// Perform transaction deposit
-		else if(proposal.getType().equals("d")) {
+		else if(proposal.getOperation() == Type.DEPOSIT) {
 			account.deposit(value);
 			log.addEntry(new LogEntry(Type.DEPOSIT, value, proposal));
 
@@ -575,12 +581,7 @@ public class Replica {
 
 	// Check to see if learner has already learned/decided this value from proposal
 	private boolean receivedDecideMsg(DecideMessage msg){
-		System.out.println("---------------------------------");
-		System.out.println(msg.getProposal().getProposerId());
-		System.out.println(msg.getProposal().getProposalNum());
 		for(int i = 0; i < learnedProposals.size(); i++){
-			System.out.println(learnedProposals.get(i).getProposerId());
-			System.out.println(learnedProposals.get(i).getProposalNum());
 			if(learnedProposals.get(i).isEqual(msg.getProposal())) {
 				return true;
 			}
