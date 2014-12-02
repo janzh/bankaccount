@@ -4,6 +4,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Random;
 
 import javax.swing.BoxLayout;
@@ -15,12 +16,13 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import bankaccount.ReplicaEvent.Type;
+import bankaccount.log.LogEntry;
 
 public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 	
 	protected JTextField textField;
     protected JTextArea textArea;
-    protected JLabel label;
+    protected JLabel label, result;
     protected Replica replica;
 	
 	public CLI2(Replica replica){	
@@ -35,6 +37,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		JScrollPane scrollPane = new JScrollPane(textArea);
 		
 		label = new JLabel("#"+replica.getId()+" Status: ");
+		result = new JLabel("Result: ");
 		
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridwidth = GridBagConstraints.REMAINDER;
@@ -42,6 +45,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		add(textField, c);
 		add(label, c);
+		add(result, c);
 		
 		c.fill = GridBagConstraints.BOTH;
 		c.weightx = 1.0;
@@ -115,15 +119,28 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 //			textArea.append("Received message: "+e.getMessage()+"\n");
 		}
 		else if (e.getType() == Type.BALANCE){
-			setStatus("");
-			textArea.append(e.getValue() + "\n");
+			//setStatus("");
+			//textArea.append(e.getValue() + "\n");
+			setResult(e.getValue());
 		} else {
 			setStatus(e.getStatus().toString());
 		}
 	}
 	
+	private void updateLogTextArea(){
+		ArrayList<LogEntry> log = replica.getLog().getLogList();
+		for (LogEntry entry : log){
+			textArea.append(entry.getOperation().toString()+": "+entry.getValue() + "\n");
+		}
+	}
+	
 	private void setStatus(String s){
 		label.setText("#"+replica.getId()+"Status: "+s);
+	}
+	
+	private void setResult(double d){
+		result.setText("Result: "+d);
+		updateLogTextArea();
 	}
 
 }

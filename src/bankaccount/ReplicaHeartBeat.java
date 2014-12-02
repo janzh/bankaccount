@@ -10,6 +10,7 @@ public class ReplicaHeartBeat extends Thread {
 	private Random rand;
 	private Replica replica;
 	
+	// TODO: Testing variables for fail/unfail commands
 	private static final int heartbeatDelayMin = 1000;
 	private static final int heartbeatDelayMax = 2000;
 	

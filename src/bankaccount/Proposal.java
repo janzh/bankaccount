@@ -2,18 +2,20 @@ package bankaccount;
 
 import java.io.Serializable;
 
+import bankaccount.ReplicaEvent.Type;
+
 public class Proposal implements Serializable{
 	
 	private int proposerId;
 	private int proposalNum;
 	private double value;
-	private String type; // "w" or "d" <--> "withdraw" or "deposit"
+	private Type operation; // "w" or "d" <--> "withdraw" or "deposit"
 	
-	public Proposal(int proposerId, int proposalNum, double value, String type) {
+	public Proposal(int proposerId, int proposalNum, double value, Type operation) {
 		this.proposerId = proposerId;
 		this.proposalNum = proposalNum;
 		this.value = value;
-		this.type = type;
+		this.operation = operation;
 	}
 	
 	public double getValue() {
@@ -28,8 +30,8 @@ public class Proposal implements Serializable{
 		return proposerId;
 	}
 	
-	public String getType() {
-		return type;
+	public Type getOperation() {
+		return operation;
 	}
 	
 	public boolean isEqual(Proposal p) {
