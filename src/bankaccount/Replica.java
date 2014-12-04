@@ -70,7 +70,6 @@ public class Replica {
 		serverListener.start();
 
 		startThreads();
-
 		
 		learnedProposals = new ArrayList<Proposal>();
 		notAcceptedProposals = new ArrayList<Proposal>();
@@ -145,6 +144,9 @@ public class Replica {
 		fireActionPerformed(Type.FAIL, Status.SUCCESS);
 		System.out.println("---------------------------------------");
 		System.out.println(this.id + ": HAS FAILED-----------------");
+	}
+	public void printLog() {
+		
 	}
 
 	public void unfail(){;

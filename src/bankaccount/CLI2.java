@@ -111,6 +111,9 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 		else if(cmd.equals("unfail")) {
 			replica.unfail();
 		}
+		else if(cmd.equals("print")) {
+			updateLogTextArea();
+		}
 	}
 
 	@Override
@@ -129,6 +132,7 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 	
 	private void updateLogTextArea(){
 		ArrayList<LogEntry> log = replica.getLog().getLogList();
+		textArea.setText("");
 		for (LogEntry entry : log){
 			textArea.append(entry.getOperation().toString()+": "+entry.getValue() + "\n");
 		}
@@ -140,7 +144,6 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 	
 	private void setResult(double d){
 		result.setText("Result: "+d);
-		updateLogTextArea();
 	}
 
 }

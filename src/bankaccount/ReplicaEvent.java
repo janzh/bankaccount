@@ -4,7 +4,7 @@ import bankaccount.ReplicaEvent.Type;
 import bankaccount.messages.Message;
 
 public class ReplicaEvent {
-	public enum Type { RECEIVE, DEPOSIT, WITHDRAW, BALANCE, FAIL, UNFAIL };
+	public enum Type { RECEIVE, DEPOSIT, WITHDRAW, BALANCE, FAIL, UNFAIL, PRINT };
 	public enum Status { SUCCESS, FAIL };
 	
 	private Type type;
