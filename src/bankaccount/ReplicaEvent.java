@@ -1,6 +1,5 @@
 package bankaccount;
 
-import bankaccount.ReplicaEvent.Type;
 import bankaccount.messages.Message;
 
 public class ReplicaEvent {

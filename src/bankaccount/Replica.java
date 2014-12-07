@@ -128,6 +128,7 @@ public class Replica {
 		unicast(getCurrentLeader(), proposeMsg);
 		
 	}
+	
 	public void withdraw(double value){
 		Proposal proposal = new Proposal(this.id, myProposals.size(), value, Type.WITHDRAW);
 		myProposals.add(proposal);
@@ -136,33 +137,42 @@ public class Replica {
 		unicast(getCurrentLeader(), proposeMsg);
 
 	}
+	
 	public void balance(){
 		fireActionPerformed(Type.BALANCE, Status.SUCCESS);
 	}
+	
 	public void fail(){
-		this.isAlive = false;
-		fireActionPerformed(Type.FAIL, Status.SUCCESS);
-		System.out.println("---------------------------------------");
-		System.out.println(this.id + ": HAS FAILED-----------------");
-	}
-	public void printLog() {
-		
+		if(this.isAlive) {
+			this.isAlive = false;
+			fireActionPerformed(Type.FAIL, Status.SUCCESS);
+			System.out.println("---------------------------------------");
+			System.out.println(this.id + ": HAS FAILED-----------------");
+		}
 	}
 
 	public void unfail(){;
-		this.isAlive = true;
-		
-		account = new Account();
-		log = new Log(id);
-		account.performOperations(log);
-		
-		requestNewLeaderId();
-		startThreads();
-		
-		System.out.println(this.heartbeatListeners.get(1));
-		fireActionPerformed(Type.UNFAIL, Status.SUCCESS);
-		System.out.println("---------------------------------------");
-		System.out.println(this.id + ": IS UNFAILED-----------------");
+		if(!this.isAlive) {
+			this.isAlive = true;
+			
+			account = new Account();
+			log = new Log(id);
+			account.performOperations(log);
+			
+			for(int i = 0; i < nrOfReplicas; i++) {
+				if (!(i == this.id)){
+					heartbeatListeners.get(i).interrupt();
+				}
+				else {continue;}
+			}
+			startThreads();
+			requestNewLeaderId();
+			
+			System.out.println(this.heartbeatListeners.get(1));
+			fireActionPerformed(Type.UNFAIL, Status.SUCCESS);
+			System.out.println("---------------------------------------");
+			System.out.println(this.id + ": IS UNFAILED-----------------");
+		}
 	}
 
 	private void fireActionPerformed(Type type, Status status){
@@ -413,7 +423,7 @@ public class Replica {
 		}
 		// New leader has been elected
 		else if(m instanceof NewLeaderNotificationMessage) {
-			System.out.println(this.id + ": RespondNewLeaderMessage received at replica");
+			System.out.println(this.id + ": NewLeaderNotificationMessage received at replica");
 			NewLeaderNotificationMessage newLeaderNotification = (NewLeaderNotificationMessage)m;
 			int newLeaderNum = newLeaderNotification.getNum();
 			
@@ -498,7 +508,7 @@ public class Replica {
 		
 		for(NodeLocationData locationData : locationDataList)
 		{
-			if(this.locationData.isEqualTo(locationData) && m instanceof HeartbeatMessage) {
+			if(this.locationData.isEqualTo(locationData) && (m instanceof HeartbeatMessage || m instanceof RequestLeaderInfoMessage)) {
 				continue;
 			}
 			// immediately deliver to self, but not if DecideMessage, because value has already been decide locally
@@ -604,20 +614,20 @@ public class Replica {
 		if(!isAlive)
 			return;
 		// If this is the replica with lowest id, it immediately elect itself
-		if(this.id == 0) {
-			System.out.println(this.id + ": has been elected as new LEADER!");
-			NewLeaderNotificationMessage newLeaderNot = new NewLeaderNotificationMessage(this.id);
-			newLeaderNot.setSender(this.getLocationData());
-			broadcast(newLeaderNot);
-		}
+//		if(this.id == 0) {
+//			System.out.println(this.id + ": has been elected as new LEADER!");
+//			NewLeaderNotificationMessage newLeaderNot = new NewLeaderNotificationMessage(this.id);
+//			newLeaderNot.setSender(this.getLocationData());
+//			broadcast(newLeaderNot);
+//		}
 		// Otherwise propose to all nodes that this Replica should be new leader
-		else {
+//		else {
 			// Clear previous list of responses to a new election
 			respondElectionList.clear();
 			ProposeNewLeaderMessage newLeaderProposal = new ProposeNewLeaderMessage(this.id);
 			newLeaderProposal.setSender(this.getLocationData());
 			broadcast(newLeaderProposal);
-		}
+//		}
 	}
 	
 }

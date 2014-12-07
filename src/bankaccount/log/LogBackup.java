@@ -16,18 +16,6 @@ public class LogBackup {
 	
 	private String fileName = "stableStorage/backup.csv";
 	private static final String separator = ",";
-
-	/*public static void main(String[] args) {
-		LogBackup backup = new LogBackup();
-		
-		backup.read();
-		
-		backup.appendEntry(Type.DEPOSIT, 500);
-		backup.appendEntry(Type.DEPOSIT, 23.5);
-		backup.appendEntry(Type.WITHDRAW, 150);
-		
-		backup.read();
-	}*/
 	
 	public LogBackup(){}
 	
@@ -49,7 +37,6 @@ public class LogBackup {
 				}
 			}
 		} catch (FileNotFoundException e) {
-			//e.printStackTrace();
 			System.out.println("A backup of the log does not exist.");
 		} catch (IOException e) {
 			e.printStackTrace();
