@@ -459,12 +459,15 @@ public class Replica {
 		double value = proposal.getValue();
 		// Perform transaction withdrawal
 		if(proposal.getOperation() == Type.WITHDRAW) {
-			account.withdraw(value);
-			log.addEntry(new LogEntry(Type.WITHDRAW, value, proposal));
+			boolean success = false;
+			try {
+				account.withdraw(value);
+				log.addEntry(new LogEntry(Type.WITHDRAW, value, proposal));
+				success = true;
+			} catch (IllegalArgumentException e){}
 			
 			if(proposal.getProposerId() == this.id) {
-				fireActionPerformed(Type.WITHDRAW, Status.SUCCESS);
-				// TODO: Must handle
+				fireActionPerformed(Type.WITHDRAW, success ? Status.SUCCESS : Status.FAIL);
 			}
 		}
 		// Perform transaction deposit
@@ -511,7 +514,7 @@ public class Replica {
 			if(this.locationData.isEqualTo(locationData) && (m instanceof HeartbeatMessage || m instanceof RequestLeaderInfoMessage)) {
 				continue;
 			}
-			// immediately deliver to self, but not if DecideMessage, because value has already been decide locally
+			// immediately deliver to self, but not if DecideMessage, because value has already been decided locally
 			else if(this.locationData.isEqualTo(locationData)) {
 				deliver(m);
 			}

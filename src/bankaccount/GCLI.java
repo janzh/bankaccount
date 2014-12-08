@@ -16,15 +16,17 @@ import javax.swing.JTextField;
 
 import bankaccount.ReplicaEvent.Type;
 import bankaccount.log.LogEntry;
-
-public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
+/**
+ * Graphical Command Line Interface
+ */
+public class GCLI extends JPanel implements ActionListener, ReplicaListener {
 	
 	protected JTextField textField;
     protected JTextArea textArea;
     protected JLabel label, result;
     protected Replica replica;
 	
-	public CLI2(Replica replica){	
+	public GCLI(Replica replica){	
 		super(new GridBagLayout());
 		this.replica = replica;
 		
@@ -132,8 +134,11 @@ public class CLI2 extends JPanel implements ActionListener, ReplicaListener {
 	private void updateLogTextArea(){
 		ArrayList<LogEntry> log = replica.getLog().getLogList();
 		textArea.setText("");
+		System.out.println("Log:");
 		for (LogEntry entry : log){
-			textArea.append(entry.getOperation().toString()+": "+entry.getValue() + "\n");
+			String logEntryString = entry.getOperation().toString()+": "+entry.getValue();
+			System.out.println(logEntryString);
+			textArea.append(logEntryString + "\n");
 		}
 	}
 	

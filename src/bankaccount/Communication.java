@@ -41,7 +41,7 @@ public class Communication {
 		}	
 	}
 
-	public static void sendMessage(Replica receiver, String message){
+	/*public static void sendMessage(Replica receiver, String message){
 		Socket socket = null;
 		try {
 			InetAddress inetAddress = InetAddress.getByName(receiver.getLocationData().getHost());
@@ -62,7 +62,7 @@ public class Communication {
 				catch (IOException ex) {}
 			}
 		}	
-	}
+	}*/
 
 	public void receiveMessage(Replica receiver){
 		int port = receiver.getLocationData().getPort();

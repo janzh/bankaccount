@@ -1,105 +1,82 @@
 package bankaccount;
 
-import java.awt.Dimension;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.WindowConstants;
+import bankaccount.ReplicaEvent.Type;
+import bankaccount.log.LogEntry;
 
-public class CLI extends JFrame implements ReplicaListener {
+public class CLI  implements ReplicaListener {
 	private Replica replica;
-	
-	private JPanel container;
-	private JTextField cmdInput;
-	private JLabel cmdOutput;
-	private String cmdString;
+
 	private String cmd;
 	private double cmdValue;
 
-	public CLI (int id) {
-		super("Application CLI");
-		replica = new Replica("localhost", 8001, id);
-
-		this.cmdInput = new JTextField(10);
-		this.cmdOutput = new JLabel("SUCCESS");
-		this.cmdString = "";
+	public CLI (Replica replica) {
+		this.replica = replica;
 		this.cmd = "";
 		this.cmdValue = 0;
-		cmdInput.addKeyListener(new textFieldListener());
 		
-		
-		this.container = new JPanel();
-		container.add(cmdInput);
-		container.add(cmdOutput);
-		this.setContentPane(container);
-		
-		this.setPreferredSize(new Dimension(400, 200));
-	    pack();
-	    setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-	    this.setVisible(true);
-		
+		try {
+			readInput();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
-	public void setOutput(String response) {
-		cmdOutput.setText(response);
+	public void print(String response) {
+		System.out.println(response);
 	}
-	
+
 	private void cmdFormat(String s) {
-		cmdString = s;
 		String[] substrings = s.split("\\(");
 		cmd = substrings[0];
-		if(cmd == "balance"){
+		if(cmd.equals("balance")){
 			return;
 		}
-		else if (cmd == "withdrawal" || cmd == "deposit"){
+		else if (cmd.equals("withdrawal") || cmd.equals("deposit")){
 			substrings = substrings[1].split("\\)");
 			cmdValue = Double.parseDouble(substrings[0]);
 		}
 		else {return;}
 	}
-	
-	public class textFieldListener implements KeyListener {
-		@Override
-		public void keyPressed(KeyEvent arg0) {
-			// TODO Auto-generated method stub
-			
-		}
-		@Override
-		public void keyReleased(KeyEvent e) {
-			int key= e.getKeyCode();
-			if(e.getSource()== cmdInput) {
-				if (key == KeyEvent.VK_ENTER) {
-					cmdFormat(cmdInput.getText());
-					if(cmd == "balance") {
-						replica.balance();
-					}
-					else if (cmd.equals("deposit")) {
-						replica.deposit(cmdValue);
-					}
-					else if (cmd.equals("withdraw")){
-						replica.withdraw(cmdValue);
-					}
-					else if (cmd.equals("fail")) {
-						replica.fail();
-					}
-					else if (cmd.equals("unfail")) {
-						replica.unfail();
-					}
+
+
+	public void readInput() throws IOException{
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		while (true){
+			cmdFormat(br.readLine());
+			if (cmd.equals("balance")) {
+				replica.balance();
+			}
+			else if (cmd.equals("deposit")) {
+				replica.deposit(cmdValue);
+			}
+			else if (cmd.equals("withdraw")){
+				replica.withdraw(cmdValue);
+			}
+			else if (cmd.equals("fail")) {
+				replica.fail();
+			}
+			else if (cmd.equals("unfail")) {
+				replica.unfail();
+			} else if (cmd.equals("print")) {
+				ArrayList<LogEntry> logList = replica.getLog().getLogList();
+				System.out.println("Log:");
+				for (LogEntry entry : logList){
+					System.out.println(entry.getOperation().toString()+": "+entry.getValue());
 				}
 			}
-		}
-		@Override
-		public void keyTyped(KeyEvent arg0) {
-			// TODO Auto-generated method stub
-			
 		}
 	}
 
 	@Override
 	public void replicaActionPerformed(ReplicaEvent e) {
-		setOutput(e.getStatus().toString());
+		if (e.getType() == Type.BALANCE){
+			print("Balance: "+e.getValue());
+		} else {
+			print(e.getStatus().toString());
+		}
 	}
 }

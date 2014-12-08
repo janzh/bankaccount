@@ -9,7 +9,7 @@ public class Main {
 		ArrayList<Replica> replicas = new ArrayList<Replica>();
 		for (int i=0; i<5; i++){
 			Replica r = new Replica("localhost", 8001+i, i);
-			CLI2 cli = new CLI2(r);
+			GCLI cli = new GCLI(r);
 			r.setListener(cli);
 		}
 		
