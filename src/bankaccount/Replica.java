@@ -130,6 +130,7 @@ public class Replica {
 	}
 	
 	public void withdraw(double value){
+		if (account.getBalance() < value) return;
 		Proposal proposal = new Proposal(this.id, myProposals.size(), value, Type.WITHDRAW);
 		myProposals.add(proposal);
 		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);

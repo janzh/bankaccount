@@ -1,5 +1,6 @@
 package bankaccount;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Main {
@@ -7,10 +8,16 @@ public class Main {
 	
 	public static void main(String[] args){
 		ArrayList<Replica> replicas = new ArrayList<Replica>();
-		for (int i=0; i<5; i++){
+		for (int i=0; i<1; i++){
 			Replica r = new Replica("localhost", 8001+i, i);
-			GCLI cli = new GCLI(r);
+			CLI cli = new CLI(r);
 			r.setListener(cli);
+			
+			try {
+				cli.readInput();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		
