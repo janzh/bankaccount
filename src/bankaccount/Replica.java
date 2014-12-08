@@ -101,7 +101,7 @@ public class Replica {
 		
 		for(int i = 0; i < nrOfReplicas; i++) {
 			String tempHost = replicaIpList.get(i);
-			int tempPort = 8001+i;
+			int tempPort = 8001;
 			NodeLocationData temp = new NodeLocationData(tempHost, tempPort, i);
 			
 			locationDataList.add(temp);
