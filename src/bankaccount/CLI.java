@@ -63,14 +63,16 @@ public class CLI  implements ReplicaListener {
 	public void replicaActionPerformed(ReplicaEvent e) {
 		if (e.getType() == Type.BALANCE){
 			println("Balance: "+e.getValue());
-		} else {
-			println("Status: "+e.getStatus().toString());
+		}
+		if (e.getType() == Type.DEPOSIT || e.getType() == Type.WITHDRAW){
+			println("Status: "+e.getStatus().toString());	
 		}
 	}
 
 	private void printLog(){
 		ArrayList<LogEntry> logList = replica.getLog().getLogList();
 		println("Log:");
+		if (logList.isEmpty()) println("Empty!");
 		for (LogEntry entry : logList){
 			println(entry.getOperation().toString()+": "+entry.getValue());
 		}

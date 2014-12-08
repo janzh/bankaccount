@@ -20,6 +20,7 @@ public class ReplicaEvent {
 	public ReplicaEvent(Type type, Message message) {
 		this.type = type;
 		this.message = message;
+		this.status = Status.SUCCESS;
 	}
 
 	public Type getType() {
