@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class Main {
 	public static void main(String[] args){
-		Replica r = new Replica("localhost", 8001, 0);
+		Replica r = new Replica("54.148.157.54", 8001, 0);
 		CLI cli = new CLI(r);
 		r.setListener(cli);
 		
