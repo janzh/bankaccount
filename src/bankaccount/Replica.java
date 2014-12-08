@@ -13,8 +13,6 @@ import bankaccount.messages.*;
 public class Replica {
 	private static final int nrOfReplicas = 5;
 	
-	private ArrayList<String> replicaIpList;
-	
 	private Account account;
 	private Log log;
 	private ReplicaListener listener;
@@ -54,14 +52,6 @@ public class Replica {
 	private Map<Integer, HeartbeatListener> heartbeatListeners;
 	
 	public Replica(String host, int port, int id){
-		// Add replicas IP
-		replicaIpList = new ArrayList<String>();
-		replicaIpList.add("54.148.157.54");
-		replicaIpList.add("54.69.100.172");
-		replicaIpList.add("54.149.12.69");
-		replicaIpList.add("54.69.199.175");
-		replicaIpList.add("54.148.74.72");
-		
 		this.id = id;
 		this.ballotNum = new Pair(id);
 		this.acceptNum = new Pair(id);
@@ -100,7 +90,7 @@ public class Replica {
 		
 		
 		for(int i = 0; i < nrOfReplicas; i++) {
-			String tempHost = replicaIpList.get(i);
+			String tempHost = Main.replicaIpList[i];
 			int tempPort = 8001;
 			NodeLocationData temp = new NodeLocationData(tempHost, tempPort, i);
 			
