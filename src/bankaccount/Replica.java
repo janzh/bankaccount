@@ -126,16 +126,15 @@ public class Replica {
 		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);
 		proposeMsg.setSender(this.locationData);
 		unicast(getCurrentLeader(), proposeMsg);
-		
 	}
 	
 	public void withdraw(double value){
+		if(account.getBalance() < value) {return;}
 		Proposal proposal = new Proposal(this.id, myProposals.size(), value, Type.WITHDRAW);
 		myProposals.add(proposal);
 		ProposeToLeaderMessage proposeMsg = new ProposeToLeaderMessage(proposal);
 		proposeMsg.setSender(this.locationData);
 		unicast(getCurrentLeader(), proposeMsg);
-
 	}
 	
 	public void balance(){
