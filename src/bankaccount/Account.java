@@ -19,6 +19,7 @@ public class Account {
 			throw new IllegalArgumentException("Withdrawal amount can not be higher than balance");
 		}
 	}
+	
 	public void deposit(double deposit) {
 		this.balance += deposit;
 	}

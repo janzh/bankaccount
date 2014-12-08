@@ -82,7 +82,7 @@ public class GCLI extends JPanel implements ActionListener, ReplicaListener {
 			substrings = substrings[1].split("\\)");
 			cmdValue = Double.parseDouble(substrings[0]);
 		}
-		else {return;}
+		else return;
 	}
 
 	@Override

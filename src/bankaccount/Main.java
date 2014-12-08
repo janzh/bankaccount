@@ -1,12 +1,19 @@
 package bankaccount;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Main {
 	public static void main(String[] args){
-		Replica r = new Replica("54.148.157.54", 8001, 0);
-		GCLI cli = new GCLI(r);
+		Replica r = new Replica("localhost", 8001, 0);
+		CLI cli = new CLI(r);
 		r.setListener(cli);
+		
+		try {
+			cli.readInput();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 //		Replica r = new Replica("54.69.100.172", 8001, 1);
 //		GCLI cli = new GCLI(r);
