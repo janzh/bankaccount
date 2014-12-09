@@ -511,7 +511,6 @@ public class Replica {
 	private void unicast(NodeLocationData nodeLocationData, Message m) {
 		if(!isAlive) {return;}
 		if(m instanceof HeartbeatMessage) {
-			System.out.println("Heartbeat sent from replica: " + m.getSender() + "to replica " + nodeLocationData.getNum());
 		}
 		Communication.sendMessage(nodeLocationData, m);
 	}

@@ -11,8 +11,8 @@ public class ReplicaHeartBeat extends Thread {
 	private Replica replica;
 	
 	// TODO: Testing variables for fail/unfail commands
-	private static final int heartbeatDelayMin = 2000;
-	private static final int heartbeatDelayMax = 5000;
+	private static final int heartbeatDelayMin = 500;
+	private static final int heartbeatDelayMax = 1000;
 	
 	public ReplicaHeartBeat(Replica replica) {
 		this.replica = replica;

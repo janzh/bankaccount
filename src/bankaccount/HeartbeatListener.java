@@ -3,7 +3,7 @@ package bankaccount;
 public class HeartbeatListener extends Thread {
 	private boolean isAlive;
 	private long lastHeartbeat;
-	private static final int heartbeatTimeout = 15000;
+	private static final int heartbeatTimeout = 5000;
 	private NodeLocationData heartbeatLocationData;
 	private Replica replica;
 	
@@ -15,7 +15,6 @@ public class HeartbeatListener extends Thread {
 	}
 	
 	public void resetTimeout() {
-		System.out.println("Timeout was reset");
 		lastHeartbeat = System.currentTimeMillis();
 	}
 
@@ -23,10 +22,9 @@ public class HeartbeatListener extends Thread {
 		while(isAlive && !interrupted()) {
 			if(heartbeatTimeout < System.currentTimeMillis() - lastHeartbeat){
 				// if was leader, elect a new one
-				if(heartbeatLocationData.isLeader())
+				if(heartbeatLocationData.isLeader()) {
 					replica.electNewLeader();
-
-				resetTimeout();
+				}
 			}
 			try {
 				sleep(0);
