@@ -2,7 +2,7 @@ package bankmanager;
 
 import java.util.Random;
 
-import bankaccount.messages.HeartbeatMessage;
+import bankmanager.messages.HeartbeatMessage;
 
 public class ReplicaHeartBeat extends Thread {
 	

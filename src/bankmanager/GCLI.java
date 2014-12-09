@@ -14,8 +14,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import bankaccount.log.LogEntry;
 import bankmanager.ReplicaEvent.Type;
+import bankmanager.log.LogEntry;
 /**
  * Graphical Command Line Interface
  */

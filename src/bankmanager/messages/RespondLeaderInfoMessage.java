@@ -1,4 +1,4 @@
-package bankaccount.messages;
+package bankmanager.messages;
 
 public class RespondLeaderInfoMessage extends Message {
 	private int num;

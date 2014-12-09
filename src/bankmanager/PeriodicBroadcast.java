@@ -1,6 +1,6 @@
 package bankmanager;
 
-import bankaccount.messages.DecideMessage;
+import bankmanager.messages.DecideMessage;
 
 // Periodically sends (DecideMessage) to all replicas each
 public class PeriodicBroadcast extends Thread{

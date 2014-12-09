@@ -1,6 +1,6 @@
 package bankmanager;
 
-import bankaccount.messages.Message;
+import bankmanager.messages.Message;
 
 public class ReplicaEvent {
 	public enum Type { RECEIVE, DEPOSIT, WITHDRAW, BALANCE, FAIL, UNFAIL, PRINT };

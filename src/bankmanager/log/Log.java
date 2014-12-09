@@ -1,4 +1,4 @@
-package bankaccount.log;
+package bankmanager.log;
 
 import java.io.Serializable;
 import java.util.ArrayList;

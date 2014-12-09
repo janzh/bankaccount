@@ -1,9 +1,9 @@
-package bankaccount.messages;
+package bankmanager.messages;
 
 import java.util.ArrayList;
 
-import bankaccount.log.LogEntry;
 import bankmanager.Proposal;
+import bankmanager.log.LogEntry;
 
 public class DecideMessage extends Message {
 	private Proposal proposal;

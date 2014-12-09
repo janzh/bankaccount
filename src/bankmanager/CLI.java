@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-import bankaccount.log.LogEntry;
 import bankmanager.ReplicaEvent.Type;
+import bankmanager.log.LogEntry;
 
 public class CLI  implements ReplicaListener {
 	private Replica replica;

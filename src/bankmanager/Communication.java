@@ -9,7 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import bankaccount.messages.Message;
+import bankmanager.messages.Message;
 
 public class Communication {
 	

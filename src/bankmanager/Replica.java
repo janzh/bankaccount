@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import bankaccount.log.Log;
-import bankaccount.log.LogEntry;
-import bankaccount.messages.*;
 import bankmanager.ReplicaEvent.Status;
 import bankmanager.ReplicaEvent.Type;
+import bankmanager.log.Log;
+import bankmanager.log.LogEntry;
+import bankmanager.messages.*;
 
 public class Replica {
 	private static final int nrOfReplicas = 5;
@@ -51,6 +51,8 @@ public class Replica {
 	private ReplicaHeartBeat heartbeat;
 	private Map<Integer, HeartbeatListener> heartbeatListeners;
 	
+	public static boolean local = false;
+	
 	public Replica(String host, int port, int id){
 		this.id = id;
 		this.ballotNum = new Pair(id);
@@ -87,8 +89,15 @@ public class Replica {
 	private void createLocationDataList() {
 		locationDataList = new ArrayList<NodeLocationData>();
 		for(int i = 0; i < nrOfReplicas; i++) {
-			String tempHost = Main.replicaIpList[i];
-			int tempPort = 8001;
+			String tempHost;
+			int tempPort;
+			if (local) {
+				 tempHost = "localhost";
+				 tempPort = 8001+i;	
+			} else {
+				tempHost = Main.replicaIpList[i];
+				tempPort = 8001;
+			}
 			NodeLocationData temp = new NodeLocationData(tempHost, tempPort, i);
 			locationDataList.add(temp);
 		}
