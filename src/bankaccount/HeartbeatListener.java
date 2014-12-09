@@ -3,7 +3,7 @@ package bankaccount;
 public class HeartbeatListener extends Thread {
 	private boolean isAlive;
 	private long lastHeartbeat;
-	private static final int heartbeatTimeout = 5000;
+	private static final int heartbeatTimeout = 15000;
 	private NodeLocationData heartbeatLocationData;
 	private Replica replica;
 	
@@ -15,6 +15,7 @@ public class HeartbeatListener extends Thread {
 	}
 	
 	public void resetTimeout() {
+		System.out.println("Timeout was reset");
 		lastHeartbeat = System.currentTimeMillis();
 	}
 
@@ -27,7 +28,12 @@ public class HeartbeatListener extends Thread {
 
 				resetTimeout();
 			}
-			yield(); // so the while loop doesn't spin too much
+			try {
+				sleep(0);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} // so the while loop doesn't spin too much
 		}
 	}
 	

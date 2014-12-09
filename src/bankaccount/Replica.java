@@ -68,8 +68,8 @@ public class Replica {
 		locationData = new NodeLocationData(host, port, id);
 		serverListener = new ServerListener(this);
 		serverListener.start();
-
-		startThreads();
+		
+		createLocationDataList();
 		
 		learnedProposals = new ArrayList<Proposal>();
 		notAcceptedProposals = new ArrayList<Proposal>();
@@ -80,24 +80,31 @@ public class Replica {
 		respondElectionList = new ArrayList<RespondNewLeaderMessage>();
 		
 		updateLeader(0);
+		
+		startThreads();
+	}
+	
+	private void createLocationDataList() {
+		locationDataList = new ArrayList<NodeLocationData>();
+		for(int i = 0; i < nrOfReplicas; i++) {
+			String tempHost = Main.replicaIpList[i];
+			int tempPort = 8001;
+			NodeLocationData temp = new NodeLocationData(tempHost, tempPort, i);
+			locationDataList.add(temp);
+		}
 	}
 	
 	private void startThreads() {
 		heartbeat = new ReplicaHeartBeat(this);
 		heartbeat.start();
 		heartbeatListeners = new HashMap<Integer, HeartbeatListener>();
-		locationDataList = new ArrayList<NodeLocationData>();
-		
 		
 		for(int i = 0; i < nrOfReplicas; i++) {
-			String tempHost = Main.replicaIpList[i];
-			int tempPort = 8001;
-			NodeLocationData temp = new NodeLocationData(tempHost, tempPort, i);
-			
-			locationDataList.add(temp);
+			// Do not create listener for itself
 			if(i == this.id) {
 				continue;
 			}
+			NodeLocationData temp = locationDataList.get(i);
 			HeartbeatListener x = new HeartbeatListener(this, temp);
 			x.start();
 			heartbeatListeners.put(i, x);
@@ -165,6 +172,7 @@ public class Replica {
 				}
 				else {continue;}
 			}
+			createLocationDataList();
 			startThreads();
 			requestNewLeaderId();
 			
@@ -502,6 +510,9 @@ public class Replica {
 	 */
 	private void unicast(NodeLocationData nodeLocationData, Message m) {
 		if(!isAlive) {return;}
+		if(m instanceof HeartbeatMessage) {
+			System.out.println("Heartbeat sent from replica: " + m.getSender() + "to replica " + nodeLocationData.getNum());
+		}
 		Communication.sendMessage(nodeLocationData, m);
 	}
 	void broadcast(Message m) {

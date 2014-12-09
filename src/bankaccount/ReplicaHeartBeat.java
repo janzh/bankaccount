@@ -11,8 +11,8 @@ public class ReplicaHeartBeat extends Thread {
 	private Replica replica;
 	
 	// TODO: Testing variables for fail/unfail commands
-	private static final int heartbeatDelayMin = 1000;
-	private static final int heartbeatDelayMax = 2000;
+	private static final int heartbeatDelayMin = 2000;
+	private static final int heartbeatDelayMax = 5000;
 	
 	public ReplicaHeartBeat(Replica replica) {
 		this.replica = replica;
@@ -29,7 +29,12 @@ public class ReplicaHeartBeat extends Thread {
 				lastHeartbeat = System.currentTimeMillis();
 				heartbeatDelay = rand.nextInt(heartbeatDelayMax - heartbeatDelayMin) + heartbeatDelayMin;
 			}
-			yield(); // so the while loop doesn't spin too much
+			try {
+				sleep(0);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} // so the while loop doesn't spin too much
 		}
 	}
 }
