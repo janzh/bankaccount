@@ -1,6 +1,6 @@
 package bankaccount.messages;
 
-import bankaccount.Proposal;
+import bankmanager.Proposal;
 
 public class ProposeToLeaderMessage extends Message {
 	private Proposal proposal;

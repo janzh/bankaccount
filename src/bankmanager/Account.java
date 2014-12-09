@@ -1,8 +1,8 @@
-package bankaccount;
+package bankmanager;
 
-import bankaccount.ReplicaEvent.Type;
 import bankaccount.log.Log;
 import bankaccount.log.LogEntry;
+import bankmanager.ReplicaEvent.Type;
 
 public class Account {
 	double balance;

@@ -1,4 +1,4 @@
-package bankaccount;
+package bankmanager;
 
 public class HeartbeatListener extends Thread {
 	private boolean isAlive;

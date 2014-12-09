@@ -9,8 +9,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
-import bankaccount.Proposal;
-import bankaccount.ReplicaEvent.Type;
+import bankmanager.Proposal;
+import bankmanager.ReplicaEvent.Type;
 
 public class LogBackup {
 	

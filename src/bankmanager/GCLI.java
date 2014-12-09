@@ -1,4 +1,4 @@
-package bankaccount;
+package bankmanager;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -14,8 +14,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import bankaccount.ReplicaEvent.Type;
 import bankaccount.log.LogEntry;
+import bankmanager.ReplicaEvent.Type;
 /**
  * Graphical Command Line Interface
  */

@@ -2,7 +2,7 @@ package bankaccount.messages;
 
 import java.io.Serializable;
 
-import bankaccount.NodeLocationData;
+import bankmanager.NodeLocationData;
 
 public abstract class Message implements Serializable{
 	protected NodeLocationData sender;

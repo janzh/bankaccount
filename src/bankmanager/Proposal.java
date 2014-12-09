@@ -1,8 +1,8 @@
-package bankaccount;
+package bankmanager;
 
 import java.io.Serializable;
 
-import bankaccount.ReplicaEvent.Type;
+import bankmanager.ReplicaEvent.Type;
 
 public class Proposal implements Serializable{
 	

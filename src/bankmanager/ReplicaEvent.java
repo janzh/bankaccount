@@ -1,4 +1,4 @@
-package bankaccount;
+package bankmanager;
 
 import bankaccount.messages.Message;
 

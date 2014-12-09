@@ -2,8 +2,8 @@ package bankaccount.messages;
 
 import java.util.ArrayList;
 
-import bankaccount.Proposal;
 import bankaccount.log.LogEntry;
+import bankmanager.Proposal;
 
 public class DecideMessage extends Message {
 	private Proposal proposal;

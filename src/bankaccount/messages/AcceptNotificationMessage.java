@@ -1,7 +1,7 @@
 package bankaccount.messages;
 
-import bankaccount.Pair;
-import bankaccount.Proposal;
+import bankmanager.Pair;
+import bankmanager.Proposal;
 
 public class AcceptNotificationMessage extends Message {
 	private Pair ballotNum;

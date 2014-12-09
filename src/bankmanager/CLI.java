@@ -1,12 +1,12 @@
-package bankaccount;
+package bankmanager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-import bankaccount.ReplicaEvent.Type;
 import bankaccount.log.LogEntry;
+import bankmanager.ReplicaEvent.Type;
 
 public class CLI  implements ReplicaListener {
 	private Replica replica;

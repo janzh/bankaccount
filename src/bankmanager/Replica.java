@@ -1,14 +1,14 @@
-package bankaccount;
+package bankmanager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import bankaccount.ReplicaEvent.Status;
-import bankaccount.ReplicaEvent.Type;
 import bankaccount.log.Log;
 import bankaccount.log.LogEntry;
 import bankaccount.messages.*;
+import bankmanager.ReplicaEvent.Status;
+import bankmanager.ReplicaEvent.Type;
 
 public class Replica {
 	private static final int nrOfReplicas = 5;

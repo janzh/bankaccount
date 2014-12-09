@@ -1,6 +1,6 @@
 package bankaccount.messages;
 
-import bankaccount.Pair;
+import bankmanager.Pair;
 
 public class PrepareRequestMessage extends Message {
 	private Pair ballotNum; 

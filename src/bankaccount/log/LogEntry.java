@@ -2,8 +2,8 @@ package bankaccount.log;
 
 import java.io.Serializable;
 
-import bankaccount.Proposal;
-import bankaccount.ReplicaEvent.Type;
+import bankmanager.Proposal;
+import bankmanager.ReplicaEvent.Type;
 
 public class LogEntry implements Serializable{
 	private Type operation;
